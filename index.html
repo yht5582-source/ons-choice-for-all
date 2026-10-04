@@ -1,909 +1,1080 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
+<!doctype html>
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中國醫藥大學北港附設醫院 - 全病患臨床營養評估與院內配方動態試算系統</title>
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --bg-main: #FDFBF7;
-            --bg-card: #FFFFFF;
-            --bg-subtle: #F7F4EF;
-            --border-color: #E8E2D8;
-            --primary: #D97706; /* 暖琥珀色 */
-            --primary-hover: #B45309;
-            --secondary: #E06D53; /* 暖珊瑚色 */
-            --text-main: #2D2522; /* 深暖棕色 */
-            --text-muted: #6E665F;
-            --accent-green: #2E7D32;
-            --accent-green-bg: #E8F5E9;
-            --accent-orange: #E65100;
-            --accent-orange-bg: #FFF3E0;
-            --accent-red: #C62828;
-            --accent-red-bg: #FFEBEE;
-            --shadow-sm: 0 2px 8px rgba(45, 37, 34, 0.05);
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="中國醫藥大學北港附設醫院院內口服／管灌營養品處方台：依病人體位、照護情境、餵食途徑與疾病，計算熱量、蛋白質與水分目標，並從院內現有品項自動組合處方。">
+<title>院內營養品處方台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: clinical console — masthead + numbered tabs; workspace = patient inputs (left) + targets, plans and prescription (right) */
+:root{
+  --paper:#f3f6f6; --panel:#ffffff; --ink:#152224; --ink-2:#47585b; --ink-3:#788a8d; --line:#d3dddd; --line-2:#e6eded;
+  --accent:#17707f; --accent-ink:#ffffff; --accent-soft:#e0f0f2;
+  --go:#2d7a4c; --go-soft:#e2f1e7; --warn:#946708; --warn-soft:#faf0d9; --stop:#b3372b; --stop-soft:#f8e2de;
+  --f-display:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0e1516; --panel:#162022; --ink:#e3eced; --ink-2:#a2b2b4; --ink-3:#738588; --line:#283537; --line-2:#1e292b;
+  --accent:#6cc3d1; --accent-ink:#082226; --accent-soft:#16313a;
+  --go:#65c48b; --go-soft:#162a1f; --warn:#e4b852; --warn-soft:#2d2612; --stop:#f08a7a; --stop-soft:#381e1a; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#0e1516; --panel:#162022; --ink:#e3eced; --ink-2:#a2b2b4; --ink-3:#738588; --line:#283537; --line-2:#1e292b;
+  --accent:#6cc3d1; --accent-ink:#082226; --accent-soft:#16313a;
+  --go:#65c48b; --go-soft:#162a1f; --warn:#e4b852; --warn-soft:#2d2612; --stop:#f08a7a; --stop-soft:#381e1a; color-scheme:dark }
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65}
+.wrap{max-width:1260px;margin:0 auto;padding-inline:20px;padding-block:0 56px}
+@media (max-width:520px){.wrap{padding-inline:16px}}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;font-weight:700;letter-spacing:.01em}
+h1{font-size:clamp(24px,3.2vw,32px);line-height:1.25}
+h3{font-size:16.5px}
+h4{margin:0;font-size:14px;font-weight:700}
+p{margin:0}
+.muted{color:var(--ink-2)} .small{font-size:13px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.masthead{padding-block:28px 0;display:grid;gap:8px}
+.masthead .sub{color:var(--ink-2);max-width:82ch}
+.src{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.src span{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--ink-2);background:var(--panel)}
+.tabs{display:flex;gap:4px;margin-top:18px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{appearance:none;border:0;background:none;font:inherit;color:var(--ink-2);padding:10px 14px 11px;cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap;font-weight:500}
+.tab b{font-family:var(--f-mono);font-weight:500;color:var(--ink-3);margin-right:6px;font-size:13px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab[aria-selected="true"] b{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.pane{padding-top:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+.card>h3{margin-bottom:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stack{display:grid;gap:16px;min-width:0}
+.field{display:grid;gap:4px;min-width:0;align-content:start}
+.field>.flabel{font-size:12.5px;color:var(--ink-2);font-weight:500}
+.field .hint{font-size:11.5px;color:var(--ink-3);line-height:1.4}
+input[type=number],input[type=search],select{font:inherit;font-size:14px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-width:0;max-width:100%}
+input[type=number]{width:96px;font-family:var(--f-mono)}
+input[type=search]{width:100%}
+select{width:100%}
+.grid3 input[type=number]{width:78px}
+.u{font-size:12px;color:var(--ink-3);font-family:var(--f-mono);white-space:nowrap}
+.inl{display:flex;gap:6px;align-items:center}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer;padding:3px 0;line-height:1.5}
+.check input{margin-top:4px;accent-color:var(--accent);flex:none}
+.check small{color:var(--ink-3);font-size:12px;display:block}
+.btn{appearance:none;font:inherit;font-size:13.5px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:7px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.sm{font-size:12.5px;padding:3px 10px}
+.pill{display:inline-block;font-size:11.5px;font-weight:500;border-radius:999px;padding:1px 9px;white-space:nowrap;vertical-align:1px}
+.pill.ev{background:var(--accent-soft);color:var(--accent)}
+.pill.go{background:var(--go-soft);color:var(--go)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.stop{background:var(--stop-soft);color:var(--stop)}
+.pill.mute{background:var(--line-2);color:var(--ink-2)}
+.sample{font-size:12px;color:var(--warn);background:var(--warn-soft);border-radius:999px;padding:1px 10px;font-weight:500}
+.note{font-size:13px;color:var(--ink-2);border-left:3px solid var(--line);padding:4px 0 4px 12px}
+.alert{border-radius:8px;padding:10px 12px;font-size:14px;display:grid;gap:4px}
+.alert.warn{background:var(--warn-soft)} .alert.warn strong{color:var(--warn)}
+.alert.stop{background:var(--stop-soft)} .alert.stop strong{color:var(--stop)}
+.alert.go{background:var(--go-soft)} .alert.go strong{color:var(--go)}
+.alert.info{background:var(--accent-soft)} .alert.info strong{color:var(--accent)}
+.alerts{display:grid;gap:8px}
+ul.plain{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line-2);vertical-align:top}
+th{font-weight:500;color:var(--ink-2);font-size:12.5px;white-space:nowrap}
+td.num,th.num{text-align:right}
+.tablebox{overflow-x:auto}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.two{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.15fr);gap:18px;align-items:start}
+@media (max-width:1020px){.two{grid-template-columns:minmax(0,1fr)}}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px}
+@media (max-width:640px){.grid2,.grid3{grid-template-columns:minmax(0,1fr)}}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+@media (max-width:640px){.checks{grid-template-columns:minmax(0,1fr)}}
+.sub-h{font-size:12.5px;color:var(--ink-2);font-weight:500;margin:14px 0 6px}
+.sub-h:first-child{margin-top:0}
+details.more>summary{cursor:pointer;font-size:13px;color:var(--ink-2);padding:4px 0}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
-        }
+/* status strip */
+.status{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(6px);padding:10px 0;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
+@media (max-width:640px){.status{position:static}}
+.status .k{display:grid;gap:0}
+.status .k span{font-size:12px;color:var(--ink-3)}
+.status .k b{font-family:var(--f-mono);font-size:21px;line-height:1.15;font-weight:500}
+.status .k b small{font-size:12px;color:var(--ink-3);margin-left:3px;font-weight:400}
+.status .grow{flex:1 1 200px;min-width:0}
+.status .acts{display:flex;gap:6px;flex-wrap:wrap}
+.lvl{font-size:13px;font-weight:700;border-radius:7px;padding:5px 10px}
+.lvl.go{background:var(--go-soft);color:var(--go)} .lvl.warn{background:var(--warn-soft);color:var(--warn)} .lvl.stop{background:var(--stop-soft);color:var(--stop)} .lvl.none{background:var(--line-2);color:var(--ink-2)}
 
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            line-height: 1.6;
-            padding: 24px 16px;
-        }
+/* targets */
+.tg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.tg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tg .m{border:1px solid var(--line-2);border-radius:8px;padding:8px 11px;background:var(--paper);display:grid;gap:1px;align-content:start}
+.tg .m .k{font-size:12px;color:var(--ink-2)}
+.tg .m .v{font-family:var(--f-mono);font-size:19px;line-height:1.3}
+.tg .m .v small{font-size:12px;color:var(--ink-3);margin-left:2px}
+.tg .m .x{font-size:11.5px;color:var(--ink-3);line-height:1.4}
+.why{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.why span{font-size:12px;border-radius:999px;padding:1px 9px;background:var(--line-2);color:var(--ink-2)}
 
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-        }
+/* plans */
+.plans{display:grid;gap:10px}
+.plan{border:1px solid var(--line);border-radius:9px;padding:11px 13px;display:grid;gap:7px;background:var(--panel)}
+.plan.best{border-color:var(--go);box-shadow:0 0 0 1px var(--go) inset}
+.plan .ph{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.plan .ph b{font-size:14.5px}
+.plan ul{margin:0;padding-left:18px;font-size:14px}
+.plan .fig{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
+.plan .fig .mono{color:var(--ink)}
+.plan .pn{font-size:12.8px;color:var(--ink-2)}
 
-        header {
-            background: linear-gradient(135deg, #FFF9F2 0%, #F7ECE1 100%);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 28px 32px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow-sm);
-        }
+/* bars */
+.bars{display:grid;gap:9px}
+.bar .bl{display:flex;justify-content:space-between;font-size:13px;gap:8px}
+.bar .bl b{font-family:var(--f-mono);font-weight:500}
+.bar .tr{position:relative;height:9px;border-radius:5px;background:var(--line-2);overflow:hidden;margin-top:3px}
+.bar .tr i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:5px;transition:width .25s}
+.bar .tr i.warn{background:var(--warn)} .bar .tr i.stop{background:var(--stop)} .bar .tr i.go{background:var(--go)}
+.bar .tr .t{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink-2)}
 
-        .header-title-container {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 8px;
-        }
+/* prescription editor */
+.rx td{vertical-align:middle;padding:6px 8px}
+.rx td:last-child,.rx td.num{white-space:nowrap}
+.rx select{min-width:180px}
+.rx input[type=number]{width:72px}
+.order{font-family:var(--f-mono);font-size:12.8px;background:var(--paper);border-radius:6px;padding:9px 11px;line-height:1.65;white-space:pre-wrap;border:1px solid var(--line-2)}
+.sched{display:grid;gap:4px;font-size:14px}
+.mini{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.mini .m{border:1px solid var(--line-2);border-radius:8px;padding:5px 10px;background:var(--paper);font-size:12.5px;color:var(--ink-2)}
+.mini .m b{font-family:var(--f-mono);font-weight:500;color:var(--ink);font-size:14px;margin-left:4px}
 
-        .header-icon {
-            width: 48px;
-            height: 48px;
-            background-color: var(--primary);
-            color: white;
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        h1 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #78350F;
-        }
-
-        .subtitle {
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-
-        .sample-toolbar {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border-radius: var(--radius-sm);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-outline {
-            background-color: var(--bg-subtle);
-            border-color: var(--border-color);
-            color: var(--text-main);
-        }
-
-        .btn-outline:hover {
-            background-color: #EFEBE4;
-        }
-
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--primary-hover);
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 480px 1fr;
-            gap: 24px;
-        }
-
-        @media (max-width: 1024px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 22px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .card-title {
-            font-size: 17px;
-            font-weight: 700;
-            color: #78350F;
-            border-bottom: 2px solid #FDE68A;
-            padding-bottom: 8px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .form-group {
-            margin-bottom: 14px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        input[type="number"], select {
-            width: 100%;
-            padding: 9px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            font-size: 14px;
-            background-color: #FAFAFA;
-        }
-
-        input[type="number"]:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            background-color: #FFFFFF;
-            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
-        }
-
-        .calc-output-box {
-            background: #FEF3C7;
-            border: 1px solid #FDE68A;
-            border-radius: var(--radius-md);
-            padding: 14px;
-            margin-top: 12px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .calc-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .calc-item .label {
-            font-size: 12px;
-            color: #92400E;
-        }
-
-        .calc-item .value {
-            font-size: 16px;
-            font-weight: 700;
-            color: #78350F;
-        }
-
-        .alert-box {
-            padding: 12px 16px;
-            border-radius: var(--radius-sm);
-            margin-bottom: 12px;
-            font-size: 13px;
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-        }
-
-        .alert-amber {
-            background-color: #FFFBEB;
-            border: 1px solid #FDE68A;
-            color: #92400E;
-        }
-
-        .alert-green {
-            background-color: #ECFDF5;
-            border: 1px solid #6EE7B7;
-            color: #065F46;
-        }
-
-        .alert-red {
-            background-color: #FEF2F2;
-            border: 1px solid #FCA5A5;
-            color: #991B1B;
-        }
-
-        .deduction-card {
-            background: linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%);
-            border: 2px solid #F59E0B;
-            border-radius: var(--radius-md);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .result-metric-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin-top: 16px;
-        }
-
-        .metric-card {
-            background-color: white;
-            border: 1px solid #FCD34D;
-            border-radius: var(--radius-sm);
-            padding: 16px;
-            text-align: center;
-        }
-
-        .metric-value {
-            font-size: 22px;
-            font-weight: 800;
-            color: #78350F;
-        }
-
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            margin-top: 10px;
-        }
-
-        th, td {
-            border: 1px solid var(--border-color);
-            padding: 10px 12px;
-            text-align: left;
-        }
-
-        th {
-            background-color: var(--bg-subtle);
-            font-weight: 700;
-            color: #78350F;
-        }
-
-        tr:nth-child(even) {
-            background-color: #FAFAFA;
-        }
-
-        .badge-code {
-            background-color: #FEF3C7;
-            color: #92400E;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-family: monospace;
-        }
-    </style>
+/* catalog */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{appearance:none;font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:999px;padding:2px 11px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.cat td{font-size:13.2px}
+.cat .nm{font-weight:700}
+.cat .sp{font-size:12px;color:var(--ink-3);line-height:1.45;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cat .nt{font-size:12px;color:var(--warn);display:block;line-height:1.45;margin-top:2px}
+.cat td:nth-child(2){min-width:260px}
+.cat td:nth-child(3){white-space:nowrap}
+.cat td:nth-child(4){min-width:110px}
+.cat td:last-child{white-space:nowrap}
+.conf{font-size:11px;border-radius:4px;padding:0 6px;font-weight:500}
+.conf.high{background:var(--go-soft);color:var(--go)} .conf.medium{background:var(--warn-soft);color:var(--warn)} .conf.low{background:var(--stop-soft);color:var(--stop)}
+.refs{padding-left:20px;margin:0;display:grid;gap:8px;font-size:13.8px}
+.refs a,.cat a{color:var(--accent)}
+.cases{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.case{display:grid;gap:8px;align-content:start}
+.disclaimer{margin-top:22px;font-size:13px;color:var(--ink-2);border-top:1px solid var(--line);padding-top:14px;max-width:90ch}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);font-size:13.5px;padding:8px 16px;border-radius:999px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+.toast.show{opacity:1}
+.flash{animation:flash 1.2s ease}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{
+  body{background:#fff;font-size:12.5px}
+  .tabs,.noprint,.toast,.status .acts{display:none!important}
+  .status{position:static}
+  .card{border-color:#bbb;break-inside:avoid}
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header>
-            <div class="header-title-container">
-                <div class="header-icon">
-                    <i class="fa-solid fa-notes-medical"></i>
-                </div>
-                <div>
-                    <h1>中國醫藥大學北港附設醫院</h1>
-                    <div class="subtitle">全病患臨床營養評估與院內配方動態試算系統 (ONS Decision Support System)</div>
-                </div>
-            </div>
-        </header>
+<div class="wrap">
+  <header class="masthead">
+    <div class="eyebrow">中國醫藥大學北港附設醫院 · 臨床營養科院內品項</div>
+    <h1>院內口服／管灌營養品處方台</h1>
+    <p class="sub">輸入體位、照護情境、餵食途徑與疾病後，系統計算熱量、蛋白質與水分目標，扣除病人目前自行吃進去的部分，再從院內現有品項自動組出 3 個處方方案，依「目標達成、品項是否適合此病人、份數與容量」排序。採用方案後可再逐項調整，最後複製醫令文字。</p>
+    <div class="src"><span>ESPEN ICU 2023</span><span>ESPEN 多重疾病住院 2018</span><span>ESPEN 老年 2022</span><span>ESPEN 癌症 2021</span><span>ESPEN 手術 2021</span><span>ESPEN 肝病 2019</span><span>KDOQI 營養 2020</span><span>NPIAP/EPUAP 壓傷 2019</span><span>NICE CG32 再餵食</span><span>GLIM 2019</span><span>院內品項清單 115.08.07</span></div>
+  </header>
 
-        <!-- Quick Toolbar -->
-        <div class="sample-toolbar">
-            <div style="font-weight:600; font-size:14px;">
-                <i class="fa-solid fa-bolt" style="color:var(--primary);"></i> 快速載入臨床典型個案範例：
-            </div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button class="btn btn-outline" onclick="loadSample(1)">範例 1：一般管灌個案</button>
-                <button class="btn btn-outline" onclick="loadSample(2)">範例 2：透析/白蛋白偏低 (元氣強)</button>
-                <button class="btn btn-outline" onclick="loadSample(3)">範例 3：CKD未透析低蛋白 (易能充)</button>
-                <button class="btn btn-primary" onclick="resetForm()"><i class="fa-solid fa-rotate-right"></i> 重置數據</button>
-            </div>
+  <nav class="tabs" role="tablist" aria-label="功能分頁">
+    <button class="tab" role="tab" id="tab-ws" aria-controls="ws" data-t="ws"><b>1</b>處方建議</button>
+    <button class="tab" role="tab" id="tab-cat" aria-controls="cat" data-t="cat"><b>2</b>院內品項</button>
+    <button class="tab" role="tab" id="tab-basis" aria-controls="basis" data-t="basis"><b>3</b>需求計算依據</button>
+    <button class="tab" role="tab" id="tab-cases" aria-controls="cases" data-t="cases"><b>4</b>示例病例</button>
+    <button class="tab" role="tab" id="tab-ref" aria-controls="ref" data-t="ref"><b>5</b>參考文獻</button>
+  </nav>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <!-- 1 workspace -->
+  <section class="pane" id="ws" role="tabpanel" aria-labelledby="tab-ws">
+    <div class="two">
+      <div class="stack">
+        <div class="card">
+          <h3>1. 病人資料</h3>
+          <div class="grid3">
+            <label class="field"><span class="flabel">性別</span><select data-s="sex"><option value="">未輸入</option><option value="m">男</option><option value="f">女</option></select></label>
+            <label class="field"><span class="flabel">年齡</span><span class="inl"><input type="number" inputmode="numeric" step="1" data-s="age"><span class="u">歲</span></span></label>
+            <label class="field"><span class="flabel">身高</span><span class="inl"><input type="number" inputmode="decimal" step="0.1" data-s="ht"><span class="u">cm</span></span></label>
+            <label class="field"><span class="flabel">目前體重</span><span class="inl"><input type="number" inputmode="decimal" step="0.1" data-s="wt"><span class="u">kg</span></span></label>
+            <label class="field"><span class="flabel">乾體重（選填）</span><span class="inl"><input type="number" inputmode="decimal" step="0.1" data-s="dry"><span class="u">kg</span></span><span class="hint">透析、水腫、腹水時填；計算改用此體重</span></label>
+            <label class="field"><span class="flabel">平常體重（選填）</span><span class="inl"><input type="number" inputmode="decimal" step="0.1" data-s="uwt"><span class="u">kg</span></span><span class="hint">用來算體重減輕 %</span></label>
+          </div>
+          <div class="grid2" style="margin-top:10px">
+            <label class="field"><span class="flabel">體重減輕發生在</span><select data-s="uwtSpan"><option value="">未輸入</option><option value="le3">3 個月內</option><option value="le6">3–6 個月</option><option value="gt6">超過 6 個月</option></select></label>
+            <label class="field"><span class="flabel">近期進食量明顯減少多久</span><select data-s="lowIntake"><option value="">未輸入</option><option value="none">沒有／<5 天</option><option value="5">5–10 天</option><option value="10">10–15 天</option><option value="15">超過 15 天</option></select></label>
+          </div>
         </div>
 
-        <div class="main-grid">
-            <!-- Left Panel: Input Parameters -->
-            <div>
-                <!-- Basic Data & Nutritional Target -->
-                <div class="card">
-                    <div class="card-title">
-                        <i class="fa-solid fa-user-doctor"></i> 1. 個案基本資料與熱量蛋白目標
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">年齡 (歲)</label>
-                            <input type="number" id="age" value="65" min="18" max="110" oninput="calculateTargets()">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">性別</label>
-                            <select id="gender" onchange="calculateTargets()">
-                                <option value="male" selected>男</option>
-                                <option value="female">女</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">身高 (cm)</label>
-                            <input type="number" id="height" value="165" min="100" max="220" oninput="calculateTargets()">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">實際體重 (kg)</label>
-                            <input type="number" id="weight" value="60" min="30" max="200" oninput="calculateTargets()">
-                        </div>
-                    </div>
-
-                    <!-- Auto-Calculated Targets Box -->
-                    <div class="calc-output-box">
-                        <div class="calc-item">
-                            <span class="label">理想體重 (IBW)</span>
-                            <span class="value" id="ibw-val">59.5 kg</span>
-                        </div>
-                        <div class="calc-item">
-                            <span class="label">身體質量指數 (BMI)</span>
-                            <span class="value" id="bmi-val">22.0</span>
-                        </div>
-                        <div class="calc-item">
-                            <span class="label">建議每日總熱量 (TEE)</span>
-                            <span class="value" id="target-tee">1785 kcal</span>
-                        </div>
-                        <div class="calc-item">
-                            <span class="label">建議每日蛋白質需求</span>
-                            <span class="value" id="target-protein">59.5 g</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Clinical Condition & Route -->
-                <div class="card">
-                    <div class="card-title">
-                        <i class="fa-solid fa-stethoscope"></i> 2. 臨床狀態與餵食途徑決策
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">照護層級 / 場景</label>
-                        <select id="care-level" onchange="calculateTargets()">
-                            <option value="ward" selected>一般病房 (Ward)</option>
-                            <option value="icu">急重症 / ICU / 外科創傷</option>
-                            <option value="outpatient">社區 / 門診 (Outpatient)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">餵食途徑</label>
-                        <select id="feeding-route" onchange="calculateTargets()">
-                            <option value="ng" selected>鼻胃管灌食 (NG Tube)</option>
-                            <option value="oral">經口進食 (Oral Feeding)</option>
-                            <option value="peg">腸造瘻 / 空腸造瘻 (PEG / J-tube)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">近期臨床狀況 (劑型優先指南)</label>
-                        <select id="appetite-status" onchange="calculateTargets()">
-                            <option value="normal" selected>食慾正常 / 體重穩定 ➔ 優先推薦粉狀沖泡配方</option>
-                            <option value="poor">食慾下降 / 體重減輕 ➔ 優先推薦濃縮液狀配方</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">疾病專用需求</label>
-                        <select id="disease-type" onchange="calculateTargets()">
-                            <option value="normal" selected>一般均衡需求</option>
-                            <option value="dm">糖尿病 (DM / 血糖控制不良)</option>
-                            <option value="ckd_ndd">慢性腎臟病 (CKD 未洗腎/低蛋白)</option>
-                            <option value="ckd_hd">腎臟透析 (HD / PD 高蛋白低電解質)</option>
-                            <option value="cancer">腫瘤 / 癌症惡病質 (高蛋白+魚油)</option>
-                            <option value="wound">傷口修復 / 手術後 (高蛋白+Arg/Glu)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- ONS Formula Selection & Modules -->
-                <div class="card">
-                    <div class="card-title">
-                        <i class="fa-solid fa-bottle-droplet"></i> 3. 院內配方開立與模組試算
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">首選主營養品項 (院內指定品項)</label>
-                        <select id="primary-product" onchange="calculateNutrition()">
-                            <option value="2814162" selected>益富 益力壯經典 55g [2814162] (251kcal, 蛋白質8.8g)</option>
-                            <option value="2814218">益富 益力康 56g [2814218] (250kcal, 蛋白質8.8g)</option>
-                            <option value="2814201">益富 益力壯20 [2814201] (250ml, 250kcal, 蛋白質12.5g)</option>
-                            <option value="sentosa_std">三多 補体康 (院內粉裝57.5g) (250kcal, 蛋白質10.7g)</option>
-                            <option value="2814039">亞培 安素雙卡 [2814039] (237ml, 478kcal, 蛋白質19.9g)</option>
-                            <option value="1828213">補體素 糖尿病鉻100 [1828213] (237ml, 235kcal, 蛋白質12.0g)</option>
-                            <option value="sentosa_dm">三多 補体康D [240ml] (250kcal, 蛋白質12.5g)</option>
-                            <option value="yifu_dm">益富 益力壯糖尿病配方 [香草即飲250ml] (250kcal, 蛋白質12.5g)</option>
-                            <option value="yifu_dm_pack">益富 益力壯糖尿病配方 [香草方便包55g] (251kcal, 蛋白質12.4g)</option>
-                            <option value="2814012">亞培 腎補納 [2814012] (237ml, 475kcal, 蛋白質10.6g)</option>
-                            <option value="sentosa_lpf">三多 補体康低蛋白營養配方 [240ml/罐] (425kcal, 蛋白質8.5g)</option>
-                            <option value="2814013">亞培 普寧勝 [2814013] (237ml, 425kcal, 蛋白質19.1g)</option>
-                            <option value="2814141">益富 新普派 [2814141] (60g, 252kcal, 蛋白質12.6g)</option>
-                            <option value="nestle_peptamen">雀巢 佳易得 水解乳清蛋白配方 [55g/250ml] (256kcal, 蛋白質12.9g)</option>
-                            <option value="1828189">益富 益力壯高效魚油優蛋白 [1828189] (250ml, 355kcal, 蛋白質22.3g)</option>
-                            <option value="2814163">益富 勉益增 [2814163] (60g, 249kcal, 蛋白質13.7g)</option>
-                            <option value="1828113">亞培 基速得 [1828113] (24g, 82kcal, 蛋白質14.0g)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">每日主品項數量 (罐/包)</label>
-                        <input type="number" id="primary-qty" value="6" min="1" max="12" oninput="calculateNutrition()">
-                    </div>
-
-                    <!-- Modular Supplement Selectors (Corrected) -->
-                    <div style="background-color:var(--bg-subtle); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-top:14px;">
-                        <div style="font-weight:700; font-size:13px; color:#78350F; margin-bottom:10px;">
-                            <i class="fa-solid fa-puzzle-piece"></i> 院內模組補充劑試算 (選填)：
-                        </div>
-                        
-                        <!-- Corrected Protein Module Selector -->
-                        <div class="form-group">
-                            <label class="form-label">蛋白質模組</label>
-                            <select id="protein-module" onchange="calculateNutrition()">
-                                <option value="none" selected>不補充</option>
-                                <option value="2814134">益富 元氣強 [2814134] (100kcal, 蛋白質 8.5g/包)</option>
-                                <option value="2814222">三多 乳清蛋白C+I [2814222] (蛋白質 4g/匙)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">蛋白質模組數量 (包/匙數)</label>
-                            <input type="number" id="protein-module-qty" value="0" min="0" max="10" oninput="calculateNutrition()">
-                        </div>
-
-                        <!-- Corrected Calorie Module Selector -->
-                        <div class="form-group">
-                            <label class="form-label">熱量模組 (低蛋白需求)</label>
-                            <select id="calorie-module" onchange="calculateNutrition()">
-                                <option value="none" selected>不補充</option>
-                                <option value="2814107">益富 易能充 [2814107] (200kcal, 蛋白質 0.8g/包)</option>
-                                <option value="sentosa_malto">三多 粉飴 (58kcal/15g, 未附匙須秤重)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">熱量模組數量 (包/份數)</label>
-                            <input type="number" id="calorie-module-qty" value="0" min="0" max="10" oninput="calculateNutrition()">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Panel: Calculation Results & Analysis -->
-            <div>
-                <!-- Dynamic Calculation Summary Card -->
-                <div class="deduction-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <span style="background:#D97706; color:white; font-size:12px; font-weight:700; padding:4px 10px; border-radius:12px;">
-                            動態試算結果 Summary
-                        </span>
-                        <span id="formula-mode-badge" style="font-size:12px; color:#92400E; font-weight:600;">標準單一模式</span>
-                    </div>
-
-                    <div style="font-size:18px; font-weight:800; color:#78350F; margin-bottom:8px;" id="selected-product-title">
-                        益富 益力壯經典 55g x 6 包/日
-                    </div>
-                    
-                    <div class="result-metric-grid">
-                        <div class="metric-card">
-                            <div style="font-size:12px; color:#92400E;">總熱量供應 (Target: <span id="target-tee-text">1785</span>)</div>
-                            <div class="metric-value" id="total-calories-supplied">1506 kcal</div>
-                            <div style="font-size:13px; font-weight:700; color:#D97706;" id="calorie-rate-text">達成率: 84%</div>
-                        </div>
-                        <div class="metric-card">
-                            <div style="font-size:12px; color:#92400E;">總蛋白質供應 (Target: <span id="target-pro-text">59.5</span>)</div>
-                            <div class="metric-value" id="total-protein-supplied">52.8 g</div>
-                            <div style="font-size:13px; font-weight:700; color:#D97706;" id="protein-rate-text">達成率: 89%</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Alert Messages -->
-                <div id="alerts-container">
-                    <div class="alert-box alert-green">
-                        <i class="fa-solid fa-circle-check" style="margin-top:2px;"></i>
-                        <div><b>臨床符合：</b>當前配方開立達成率良好（熱量達成率 84%，蛋白質達成率 89%），能有效支持目標需求。</div>
-                    </div>
-                </div>
-
-                <!-- Catalog Comparison Table -->
-                <div class="card">
-                    <div class="card-title">
-                        <i class="fa-solid fa-list-check"></i> 院內指定口服/管灌營養品速查表 (Hospital Catalog)
-                    </div>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>醫令碼</th>
-                                    <th>產品名稱</th>
-                                    <th>規格/包裝</th>
-                                    <th>熱量(kcal)</th>
-                                    <th>蛋白質(g)</th>
-                                    <th>臨床定位</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><span class="badge-code">2814162</span></td>
-                                    <td>益富 益力壯經典 55g</td>
-                                    <td>55g/包</td>
-                                    <td>251</td>
-                                    <td>8.8</td>
-                                    <td>標準管灌/均衡沖泡</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">2814218</span></td>
-                                    <td>益富 益力康 56g</td>
-                                    <td>56g/包</td>
-                                    <td>250</td>
-                                    <td>8.8</td>
-                                    <td>標準管灌/均衡沖泡</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">2814201</span></td>
-                                    <td>益富 益力壯 20</td>
-                                    <td>250ml/罐</td>
-                                    <td>250</td>
-                                    <td>12.5</td>
-                                    <td>高蛋白管灌/口飲</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">自費</span></td>
-                                    <td>三多 補体康 (院內粉裝)</td>
-                                    <td>57.5g/包</td>
-                                    <td>250</td>
-                                    <td>10.7</td>
-                                    <td>均衡補充</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">2814039</span></td>
-                                    <td>亞培 安素雙卡 (香草)</td>
-                                    <td>237ml/罐</td>
-                                    <td>478</td>
-                                    <td>19.9</td>
-                                    <td>2.0濃縮高熱量/限水</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">1828213</span></td>
-                                    <td>補體素 糖尿病鉻100</td>
-                                    <td>237ml/罐</td>
-                                    <td>235</td>
-                                    <td>12.0</td>
-                                    <td>糖尿病血糖管理</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">自費</span></td>
-                                    <td>三多 補体康D</td>
-                                    <td>240ml/罐</td>
-                                    <td>250</td>
-                                    <td>12.5</td>
-                                    <td>糖尿病無糖低GI (蛋白質熱量比20%)</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">自費</span></td>
-                                    <td>益富 益力壯糖尿病配方(香草即飲)</td>
-                                    <td>250ml/罐</td>
-                                    <td>250</td>
-                                    <td>12.5</td>
-                                    <td>糖尿病低GI/鉻配方 (蛋白質熱量比20%)</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">自費</span></td>
-                                    <td>益富 益力壯糖尿病配方(香草方便包)</td>
-                                    <td>55g/包 (沖泡250ml)</td>
-                                    <td>251</td>
-                                    <td>12.4</td>
-                                    <td>糖尿病低GI/沖泡隨手包 (蛋白質熱量比19.8%)</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">2814012</span></td>
-                                    <td>亞培 腎補納</td>
-                                    <td>237ml/罐</td>
-                                    <td>475</td>
-                                    <td>10.6</td>
-                                    <td>CKD未洗腎低蛋白 (2.0高熱量濃縮)</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">自費</span></td>
-                                    <td>三多 補体康低蛋白營養配方</td>
-                                    <td>240ml/罐</td>
-                                    <td>425</td>
-                                    <td>8.5</td>
-                                    <td>CKD未洗腎低蛋白濃縮配方 (蛋白質熱量比8.0%)</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">2814013</span></td>
-                                    <td>亞培 普寧勝</td>
-                                    <td>237ml/罐</td>
-                                    <td>425</td>
-                                    <td>19.1</td>
-                                    <td>透析高蛋白低電解質</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">2814141</span></td>
-                                    <td>益富 新普派</td>
-                                    <td>60g/包</td>
-                                    <td>252</td>
-                                    <td>12.6</td>
-                                    <td>水解乳清/腸造瘻/PEG</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">自費</span></td>
-                                    <td>雀巢 佳易得 水解乳清蛋白配方</td>
-                                    <td>55g/沖泡250ml (400g/罐)</td>
-                                    <td>256</td>
-                                    <td>12.9</td>
-                                    <td>100%水解乳清胜肽/好吸收 (蛋白質熱量比20.2%)</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">2814134</span></td>
-                                    <td>益富 元氣強 (模組)</td>
-                                    <td>24g/包</td>
-                                    <td>100</td>
-                                    <td>8.5</td>
-                                    <td>高蛋白/極低鉀模組</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">2814107</span></td>
-                                    <td>益富 易能充 (模組)</td>
-                                    <td>45g/包</td>
-                                    <td>200</td>
-                                    <td>0.8</td>
-                                    <td>未洗腎低蛋白熱量模組</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">2814222</span></td>
-                                    <td>三多 乳清蛋白C+I (模組)</td>
-                                    <td>5g/匙</td>
-                                    <td>20</td>
-                                    <td>4.0</td>
-                                    <td>80%純度蛋白質模組</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge-code">自費</span></td>
-                                    <td>三多 粉飴 (模組)</td>
-                                    <td>15g/份</td>
-                                    <td>58</td>
-                                    <td>0.0</td>
-                                    <td>純碳水化合物熱量模組</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+        <div class="card">
+          <h3>2. 照護情境與餵食途徑</h3>
+          <div class="grid2">
+            <label class="field"><span class="flabel">照護情境</span><select data-s="setting"><option value="ward">一般病房</option><option value="icu">加護病房（重症）</option><option value="opd">門診／居家</option></select></label>
+            <label class="field"><span class="flabel">餵食途徑</span><select data-s="route"><option value="oral">經口（口服營養補充）</option><option value="ng">鼻胃管</option><option value="peg">胃造口（PEG）</option><option value="jt">空腸管／空腸造口</option></select></label>
+            <label class="field"><span class="flabel">目前飲食（經口）約達需求的</span><span class="inl"><input type="number" inputmode="numeric" step="5" min="0" max="100" data-s="oral"><span class="u">%</span></span><span class="hint">只靠營養品就填 0；系統只補不足的部分</span></label>
+            <label class="field" data-show="tube"><span class="flabel">管灌餐數</span><span class="inl"><input type="number" inputmode="numeric" step="1" min="1" max="8" data-s="feeds"><span class="u">餐/日</span></span><span class="hint">空腸管會改用連續灌食</span></label>
+          </div>
         </div>
+
+        <div class="card">
+          <h3>3. 疾病與狀況 <span class="small muted" style="font-weight:400">可複選</span></h3>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-c="dm"><span>糖尿病／高血糖</span></label>
+            <label class="check"><input type="checkbox" data-c="ckd"><span>慢性腎臟病，未透析<small>第 3–5 期</small></span></label>
+            <label class="check"><input type="checkbox" data-c="hd"><span>血液透析／腹膜透析</span></label>
+            <label class="check"><input type="checkbox" data-c="onc"><span>癌症（治療中、惡病質）</span></label>
+            <label class="check"><input type="checkbox" data-c="wound"><span>壓傷或傷口難癒<small>第 2 期以上</small></span></label>
+            <label class="check"><input type="checkbox" data-c="surg"><span>重大手術前後</span></label>
+            <label class="check"><input type="checkbox" data-c="cirr"><span>肝硬化</span></label>
+            <label class="check"><input type="checkbox" data-c="malab"><span>吸收不良／管灌不耐<small>腹瀉、胰臟功能不全、短腸</small></span></label>
+            <label class="check"><input type="checkbox" data-c="burn"><span>燒傷 >20% TBSA 或重大創傷</span></label>
+            <label class="check"><input type="checkbox" data-c="dysph"><span>吞嚥困難（經口需調整質地）</span></label>
+            <label class="check"><input type="checkbox" data-c="fluidR"><span>需限水<small>心衰竭、低血鈉、腹水</small></span></label>
+            <label class="check"><input type="checkbox" data-c="press"><span>腹瀉或便秘（考慮纖維）</span></label>
+          </div>
+          <div class="grid3" style="margin-top:10px">
+            <label class="field" data-show="fluid"><span class="flabel">每日液體上限</span><span class="inl"><input type="number" inputmode="numeric" step="50" data-s="fluidLim"><span class="u">mL</span></span></label>
+            <label class="field"><span class="flabel">血鉀（選填）</span><span class="inl"><input type="number" inputmode="decimal" step="0.1" data-s="labK"><span class="u">mmol/L</span></span></label>
+            <label class="field"><span class="flabel">血磷（選填）</span><span class="inl"><input type="number" inputmode="decimal" step="0.1" data-s="labP"><span class="u">mg/dL</span></span></label>
+          </div>
+          <div class="sub-h">再餵食症候群風險因子（NICE CG32）</div>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-s="lowLytes"><span>開始餵食前 K、P 或 Mg 偏低</span></label>
+            <label class="check"><input type="checkbox" data-s="drugs"><span>酗酒，或使用胰島素、化療、制酸劑、利尿劑</span></label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>4. 目標微調與品項偏好</h3>
+          <div class="grid2">
+            <label class="field"><span class="flabel">計算體重</span><select data-s="wBasis"><option value="auto">自動（建議）</option><option value="actual">實際體重</option><option value="ibw">理想體重</option><option value="adj">校正體重</option></select><span class="hint">自動：體重 >120% 理想體重用校正體重，其餘用實際（或乾）體重</span></label>
+            <label class="field"><span class="flabel">理想體重公式</span><select data-s="ibwM"><option value="tw">男 (身高−80)×0.7／女 (身高−70)×0.6</option><option value="bmi22">BMI 22 × 身高²</option></select></label>
+            <label class="field"><span class="flabel">熱量（覆寫）</span><span class="inl"><input type="number" inputmode="decimal" step="1" data-s="kcalKg"><span class="u">kcal/kg</span></span><span class="hint">空白＝依疾病自動</span></label>
+            <label class="field"><span class="flabel">蛋白質（覆寫）</span><span class="inl"><input type="number" inputmode="decimal" step="0.05" data-s="proKg"><span class="u">g/kg</span></span></label>
+            <label class="field"><span class="flabel">品項來源</span><select data-s="avail"><option value="any">不限</option><option value="kitchen">只用管灌膳食供應品項</option><option value="selfpay">只用有醫令的自費品項</option></select></label>
+            <label class="field"><span class="flabel">劑型</span><select data-s="form"><option value="any">不限</option><option value="powder">粉狀沖泡</option><option value="liquid">液狀即飲</option></select><span class="hint">食慾差、要少量高密度時選液狀</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <h3>每日需求 <span class="pill mute" id="basisTag"></span></h3>
+          <div id="targets"></div>
+        </div>
+        <div class="card" id="flagCard" hidden>
+          <h3>評估提醒</h3>
+          <div class="alerts" id="flags"></div>
+        </div>
+        <div class="card">
+          <h3>建議處方方案 <span class="pill ev" id="planTag"></span></h3>
+          <p class="small muted" style="margin-bottom:10px" id="planIntro"></p>
+          <div class="plans" id="plans"></div>
+          <div id="extras" style="margin-top:10px"></div>
+        </div>
+        <div class="card" id="rxCard">
+          <h3>本次處方 <span class="pill mute" id="rxTag"></span></h3>
+          <div class="tablebox"><table class="rx"><thead><tr><th>品項</th><th>數量</th><th class="num">熱量</th><th class="num">蛋白質</th><th></th></tr></thead><tbody id="rxRows"></tbody></table></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px" class="noprint"><button class="btn sm" type="button" id="rxAdd">＋ 加一項</button><button class="btn sm" type="button" id="rxClear">清空處方</button></div>
+          <div class="bars" id="rxBars" style="margin-top:14px"></div>
+          <div class="mini" id="rxMini"></div>
+          <div class="alerts" id="rxAlerts" style="margin-top:12px"></div>
+          <div id="rxSched" style="margin-top:12px"></div>
+          <div class="sub-h" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">醫令／病歷文字 <button class="btn sm primary noprint" type="button" id="copyOrder">複製</button></div>
+          <div class="order" id="order"></div>
+        </div>
+      </div>
     </div>
+  </section>
 
-    <!-- Corrected JavaScript Calculation Logic -->
-    <script>
-        // Exact Hospital Product Database
-        const productsDB = {
-            '2814162': { name: '益富 益力壯經典 55g', calories: 251, protein: 8.8 },
-            '2814218': { name: '益富 益力康 56g', calories: 250, protein: 8.8 },
-            '2814201': { name: '益富 益力壯 20', calories: 250, protein: 12.5 },
-            'sentosa_std': { name: '三多 補体康 (院內粉裝)', calories: 250, protein: 10.7 },
-            '2814039': { name: '亞培 安素雙卡', calories: 478, protein: 19.9 },
-            '1828213': { name: '補體素 糖尿病鉻100', calories: 235, protein: 12.0 },
-            'sentosa_dm': { name: '三多 補体康D', calories: 250, protein: 12.5 },
-            'yifu_dm': { name: '益富 益力壯糖尿病配方 (香草即飲250ml)', calories: 250, protein: 12.5 },
-            'yifu_dm_pack': { name: '益富 益力壯糖尿病配方 (香草方便包55g)', calories: 251, protein: 12.4 },
-            '2814012': { name: '亞培 腎補納', calories: 475, protein: 10.6 },
-            'sentosa_lpf': { name: '三多 補体康低蛋白營養配方 (240ml/罐)', calories: 425, protein: 8.5 },
-            '2814013': { name: '亞培 普寧勝', calories: 425, protein: 19.1 },
-            '2814141': { name: '益富 新普派', calories: 252, protein: 12.6 },
-            'nestle_peptamen': { name: '雀巢 佳易得 水解乳清蛋白配方 (400g/罐)', calories: 256, protein: 12.9 },
-            '1828189': { name: '益富 益力壯高效魚油優蛋白', calories: 355, protein: 22.3 },
-            '2814163': { name: '益富 勉益增', calories: 249, protein: 13.7 },
-            '1828113': { name: '亞培 基速得', calories: 82, protein: 14.0 }
-        };
+  <!-- 2 catalog -->
+  <section class="pane" id="cat" role="tabpanel" aria-labelledby="tab-cat" hidden>
+    <div class="card">
+      <h3>院內營養品 <span class="pill mute" id="catCount"></span></h3>
+      <p class="small muted" style="margin-bottom:10px">品項依臨床營養科「院內營養品（管灌與自費）」清單（115.08.07 更新）。營養成分由網路查證廠商標示而得，每項附來源與可信度：<span class="conf high">高</span> 官方頁或標示圖逐項讀到；<span class="conf medium">中</span> 電商轉述或由每 100 g 換算；<span class="conf low">低</span> 找不到可靠標示。廠商會改配方，開立前以實際包裝標示為準。「—」表示查不到。</p>
+      <div class="chips" id="catChips"></div>
+      <input type="search" id="catQ" placeholder="搜尋品名、廠牌或醫令碼" style="margin-bottom:10px">
+      <div class="tablebox"><table class="cat"><thead><tr><th>醫令碼</th><th>品項</th><th>供應</th><th>一份</th><th class="num">熱量</th><th class="num">蛋白質</th><th class="num">kcal/mL</th><th class="num">Na</th><th class="num">K</th><th class="num">P</th><th>來源</th></tr></thead><tbody id="catRows"></tbody></table></div>
+      <p class="small muted" style="margin-top:8px">Na、K、P 單位為 mg／份。「管灌」＝院內管灌膳食可供應；「自費」＝有醫令碼可自費開立。</p>
+    </div>
+  </section>
 
-        // Modular Supplement Database
-        const proteinModulesDB = {
-            'none': { calories: 0, protein: 0 },
-            '2814134': { name: '益富 元氣強', calories: 100, protein: 8.5 }, // 24g/包, 蛋白質 8.5g
-            '2814222': { name: '三多 乳清蛋白C+I', calories: 20, protein: 4.0 }  // 5g/匙, 蛋白質 4.0g
-        };
+  <!-- 3 basis -->
+  <section class="pane" id="basis" role="tabpanel" aria-labelledby="tab-basis" hidden>
+    <div class="stack">
+      <div class="card">
+        <h3>熱量與蛋白質目標</h3>
+        <p class="small muted" style="margin-bottom:8px">同時勾選多個狀況時，熱量取最適合的一項，蛋白質取最高的一項；但未透析慢性腎臟病會把蛋白質「壓低」到下表上限（重症或高分解狀態時例外）。所有數值都可在「目標微調」覆寫。</p>
+        <div class="tablebox"><table id="basisTable"><thead><tr><th>情境</th><th>熱量 kcal/kg</th><th>蛋白質 g/kg</th><th>依據</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="card">
+        <h3>計算體重</h3>
+        <ul class="plain">
+          <li>理想體重：院內慣用 男 (身高−80)×0.7、女 (身高−70)×0.6；或 BMI 22 × 身高(m)²。</li>
+          <li>自動模式：實際體重 ≤120% 理想體重 → 用實際體重（體重過輕的人用實際體重，避免過度餵食）；&gt;120% → 校正體重 = 理想 + 0.25 ×（實際 − 理想）。</li>
+          <li>有填乾體重（透析、水腫、腹水）時，以乾體重取代實際體重。ESPEN 肝病指引建議腹水依嚴重度扣 5／10／15%。</li>
+          <li>水分：30 mL/kg（範圍 25–35）；有限水時以上限為準。透析病人約為「尿量 + 500–750 mL」。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>營養不良與再餵食風險</h3>
+        <ul class="plain">
+          <li><b>GLIM</b>：表現型（非刻意體重減輕 &gt;5%／6 個月內或 &gt;10%／超過 6 個月；BMI &lt;18.5（&lt;70 歲）或 &lt;20（≥70 歲），亞洲切點；肌肉量減少）≥1 項，加上病因（進食 ≤50% 需求 &gt;1 週，或急慢性發炎疾病）≥1 項，即診斷營養不良。本工具未評估肌肉量。</li>
+          <li><b>NICE CG32 再餵食高風險</b>：下列 1 項——BMI &lt;16、3–6 個月體重減輕 &gt;15%、幾乎沒進食 &gt;10 天、餵食前 K/P/Mg 偏低；或下列 2 項——BMI &lt;18.5、3–6 個月體重減輕 &gt;10%、幾乎沒進食 &gt;5 天、酗酒或使用胰島素／化療／制酸劑／利尿劑。高風險起始 ≤10 kcal/kg/日（BMI &lt;14 或 &gt;15 天沒進食：5 kcal/kg），4–7 天內逐步加到目標；餵食前與前 10 天補充 thiamine 與綜合維生素，監測 K、P、Mg。</li>
+          <li><b>ASPEN 2020</b>：有風險者前 24 小時 10–20 kcal/kg，之後每 1–2 天增加目標的 33%。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>口服營養補充與管灌</h3>
+        <ul class="plain">
+          <li>口服營養補充（ONS）每日至少 400 kcal、含 ≥30 g 蛋白質，持續 ≥1 個月（ESPEN 多重疾病住院 2018）。</li>
+          <li>經口加 ONS 預期仍 &lt;50% 需求超過 7 天，應考慮管灌（ESPEN 手術 2021）。本工具口服每日最多排 3 份主品項。</li>
+          <li>重症：第 1–3 天熱量不超過估計消耗的 70%，第 3 天後 80–100%；蛋白質逐步加到 1.3 g/kg（ESPEN ICU 2023）。</li>
+          <li>空腸灌食以連續灌食為主；一般配方多可耐受，吸收不良或不耐時改水解（半元素）配方。</li>
+          <li>麩醯胺酸：燒傷 &gt;20% TBSA（0.3–0.5 g/kg/日，10–15 天）與重大創傷（0.2–0.3 g/kg/日，前 5 天）可另外補充；其他重症病人不建議（ESPEN ICU 2023）。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
 
-        const calorieModulesDB = {
-            'none': { calories: 0, protein: 0 },
-            '2814107': { name: '益富 易能充', calories: 200, protein: 0.8 }, // 45g/包, 200 kcal, 蛋白質 0.8g
-            'sentosa_malto': { name: '三多 粉飴', calories: 58, protein: 0.0 }  // 15g/份, 58 kcal
-        };
+  <!-- 4 cases -->
+  <section class="pane" id="cases" role="tabpanel" aria-labelledby="tab-cases" hidden>
+    <p class="muted small" style="margin-bottom:12px">載入示例會覆蓋目前輸入。示例為教學用虛構資料。</p>
+    <div class="cases" id="caseList"></div>
+  </section>
 
-        function calculateTargets() {
-            const gender = document.getElementById('gender').value;
-            const height = parseFloat(document.getElementById('height').value) || 165;
-            const weight = parseFloat(document.getElementById('weight').value) || 60;
-            const disease = document.getElementById('disease-type').value;
+  <!-- 5 references -->
+  <section class="pane" id="ref" role="tabpanel" aria-labelledby="tab-ref" hidden>
+    <div class="card">
+      <h3>參考文獻</h3>
+      <ol class="refs" id="refList"></ol>
+      <div class="sub-h" style="margin-top:18px">更新紀錄</div>
+      <ul class="plain small" id="changelog"></ul>
+    </div>
+    <p class="disclaimer">本工具供院內醫療與營養專業人員試算與流程輔助使用，不取代營養師評估與臨床判斷。品項營養成分來自網路查證的廠商標示，廠商可能改配方，開立前請以實際包裝為準。輸入資料只存在這台裝置的瀏覽器（localStorage），不會上傳；請勿輸入可識別病人身分的資訊。</p>
+  </section>
+</div>
+<div class="toast" id="toast" role="status"></div>
 
-            // IBW Calculation: Male (H-80)*0.7, Female (H-70)*0.6
-            let ibw = gender === 'male' ? (height - 80) * 0.7 : (height - 70) * 0.6;
-            ibw = Math.round(ibw * 10) / 10;
-            const bmi = Math.round((weight / ((height / 100) ** 2)) * 10) / 10;
+<script>
+/*ENGINE-START*/
+const ONS = (() => {
+const num = v => (v === '' || v === null || v === undefined || v === false || !isFinite(Number(v))) ? null : Number(v);
+const r0 = x => Math.round(x);
+const r1 = x => Math.round(x * 10) / 10;
 
-            document.getElementById('ibw-val').innerText = `${ibw} kg`;
-            document.getElementById('bmi-val').innerText = `${bmi}`;
+/* ---------- categories ---------- */
+const CAT = {
+  std: '一般均衡', conc: '濃縮高熱量', dm: '糖尿病', ckd: '腎病未透析', hd: '洗腎', pep: '水解／半元素', onc: '腫瘤', imm: '免疫調節',
+  wound: '傷口癒合', gln: '麩醯胺酸', clear: '術前清流', promod: '蛋白質模組', calmod: '熱量模組', fib: '膳食纖維', yeast: '酵母', food: '介護食'
+};
+const BASE = ['std', 'conc', 'dm', 'ckd', 'hd', 'pep', 'onc', 'imm'];
 
-            // TEE (30 kcal/kg IBW)
-            const targetTee = Math.round(ibw * 30);
-            document.getElementById('target-tee').innerText = `${targetTee} kcal`;
-            document.getElementById('target-tee-text').innerText = targetTee;
+/* ---------- product data (院內清單 115.08.07; values per serving, verified online — see catalog sources) ---------- */
+/*DATA-START*/
+const P = [
+  {"id": "efi-classic22", "code": "2814164", "brand": "益富", "name": "益力壯經典 22g", "labelName": "益力壯經典 22g", "cat": "std", "form": "powder", "serving": "22 g 小包（約 100 mL）", "unit": "包", "g": 22, "ml": 100, "kcal": 100, "pro": 3.5, "fat": 3.8, "cho": 13.2, "fib": 0.5, "na": 94, "k": 146, "p": 55, "ca": 79, "water": null, "kcalMl": 1, "osm": "300 mOsm/kg（官方標示，標準沖泡濃度 55 g/250 mL）", "kitchen": true, "selfpay": true, "stock": false, "tubeOk": true, "half": false, "mlEst": true, "conf": "medium", "special": "雙蛋白：濃縮乳清蛋白50%+分離黃豆蛋白50%（蛋白質熱量14.1%）；芥花油為主（富含MUFA），未添加動物性油脂；含黃豆纖維（每55 g 1.2 g）；乳糖0.3 g/55 g（每100 g 0.6 g）；含鉻13.9 µg/55 g；28種維生素+礦物質；奶素可食；含牛奶、黃豆。官方『沖泡配方』比較表定位『日常保養／溫和含纖』。", "indication": "衛福部許可特定疾病配方食品；適用對象：使用流質或管灌飲食的病人、身體虛弱者、營養不良者、營養補充者；作為唯一營養來源時每日建議1500大卡（6杯）。", "note": "官方無 22 g 標示，數值由每 100 g 換算，容量為估計", "src": ["https://www.enutrition.com.tw/products/feeding-powder-strongclassic-12", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_f471c542-6954-42a8-a7c5-a302eb4d02b6.jpg", "https://www.enutrition.com.tw/products/feeding-powder-strongclassic-bag"]},
+  {"id": "efi-classic55", "code": "2814162", "brand": "益富", "name": "益力壯經典 55g", "labelName": "益力壯經典 55g", "cat": "std", "form": "powder", "serving": "55 g 沖成 250 mL", "unit": "包", "g": 55, "ml": 250, "kcal": 251, "pro": 8.8, "fat": 9.5, "cho": 33.1, "fib": 1.2, "na": 234, "k": 364, "p": 137, "ca": 198, "water": null, "kcalMl": 1, "osm": "300 mOsm/kg", "kitchen": true, "selfpay": true, "stock": true, "tubeOk": true, "conf": "high", "special": "雙蛋白：濃縮乳清蛋白50%+分離黃豆蛋白50%（蛋白質熱量14.1%）；芥花油為主（富含MUFA），未添加動物性油脂；含黃豆纖維（每55 g 1.2 g）；乳糖0.3 g/55 g（每100 g 0.6 g）；含鉻13.9 µg/55 g；28種維生素+礦物質；奶素可食；含牛奶、黃豆。官方『沖泡配方』比較表定位『日常保養／溫和含纖』。", "indication": "衛福部許可特定疾病配方食品；適用對象：使用流質或管灌飲食的病人、身體虛弱者、營養不良者、營養補充者；作為唯一營養來源時每日建議1500大卡（6杯）。", "src": ["https://www.enutrition.com.tw/products/feeding-powder-strongclassic-bag", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_9eb84a6d-d906-4219-84bd-564cfb9ab507.jpg", "https://www.enutrition.com.tw/products/feeding-powder-strongclassic-12"]},
+  {"id": "efi-classic66", "code": null, "brand": "益富", "name": "益力壯經典 66g", "labelName": "益力壯經典 66g", "cat": "std", "form": "powder", "serving": "66 g（約 300 mL）", "unit": "包", "g": 66, "ml": 300, "kcal": 300, "pro": 10.6, "fat": 11.3, "cho": 39.7, "fib": 1.4, "na": 280, "k": 437, "p": 164, "ca": 238, "water": null, "kcalMl": 1, "osm": "300 mOsm/kg（標準沖泡濃度 55 g/250 mL 時）", "kitchen": true, "selfpay": false, "stock": false, "tubeOk": true, "mlEst": true, "conf": "medium", "special": "雙蛋白：濃縮乳清蛋白50%+分離黃豆蛋白50%（蛋白質熱量14.1%）；芥花油為主（富含MUFA），未添加動物性油脂；含黃豆纖維（每55 g 1.2 g）；乳糖0.3 g/55 g（每100 g 0.6 g）；含鉻13.9 µg/55 g；28種維生素+礦物質；奶素可食；含牛奶、黃豆。官方『沖泡配方』比較表定位『日常保養／溫和含纖』。", "indication": "衛福部許可特定疾病配方食品；適用對象：使用流質或管灌飲食的病人、身體虛弱者、營養不良者、營養補充者；作為唯一營養來源時每日建議1500大卡（6杯）。", "note": "官方無 66 g 標示，數值由每 100 g 換算，容量為估計", "src": ["https://www.enutrition.com.tw/products/feeding-powder-strongclassic-12", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_f471c542-6954-42a8-a7c5-a302eb4d02b6.jpg", "https://www.enutrition.com.tw/products/feeding-powder-strongclassic-bag"]},
+  {"id": "efi-kang22", "code": "2814217", "brand": "益富", "name": "益力康 22g", "labelName": "益力康 22g", "cat": "std", "form": "powder", "serving": "22 g 小包（約 100 mL）", "unit": "包", "g": 22, "ml": 100, "kcal": 99, "pro": 3.5, "fat": 3.7, "cho": 13.1, "fib": 0.3, "na": 79, "k": 105, "p": 53, "ca": 91, "water": null, "kcalMl": 0.99, "osm": "300 mOsm/kg（標準沖泡濃度 56.6 g/250 mL 時）", "kitchen": true, "selfpay": true, "stock": false, "tubeOk": true, "mlEst": true, "conf": "medium", "special": "100%濃縮乳清蛋白（蛋白質熱量14%）；芥花油為主，未添加動物性油脂；含黃豆纖維（每56.6 g 0.9 g）；標示『無添加乳糖』但營養標示乳糖0.7 g/份（1.3 g/100 g，來自乳清）；含鉻；鉀較益力壯經典低（479 vs 662 mg/100 g）；奶素可食；含牛奶、黃豆。", "indication": "衛福部許可特定疾病配方食品；適用對象：營養不良者、使用流質或管灌飲食者、身體虛弱者、營養補充者；作為唯一營養來源時每日建議1500大卡。", "note": "官方無 22 g 標示，數值由每 100 g 換算，容量為估計；假設為益力康營養均衡配方（非高纖版）", "src": ["https://www.enutrition.com.tw/products/feeding-powder-healthlessk", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_9c5830f8-989b-4222-93ae-130be5585241.jpg", "https://www.enutrition.com.tw/products/feeding-powder-healthlessk-bag"]},
+  {"id": "efi-kang56", "code": "2814218", "brand": "益富", "name": "益力康 56g", "labelName": "益力康 56g", "cat": "std", "form": "powder", "serving": "56 g 沖成 250 mL", "unit": "包", "g": 56, "ml": 250, "kcal": 252, "pro": 8.8, "fat": 9.5, "cho": 33.2, "fib": 0.9, "na": 202, "k": 268, "p": 134, "ca": 231, "water": null, "kcalMl": 1.01, "osm": "300 mOsm/kg", "kitchen": true, "selfpay": true, "stock": false, "tubeOk": true, "conf": "high", "special": "100%濃縮乳清蛋白（蛋白質熱量14%）；芥花油為主，未添加動物性油脂；含黃豆纖維（每56.6 g 0.9 g）；標示『無添加乳糖』但營養標示乳糖0.7 g/份（1.3 g/100 g，來自乳清）；含鉻；鉀較益力壯經典低（479 vs 662 mg/100 g）；奶素可食；含牛奶、黃豆。", "indication": "衛福部許可特定疾病配方食品；適用對象：營養不良者、使用流質或管灌飲食者、身體虛弱者、營養補充者；作為唯一營養來源時每日建議1500大卡。", "note": "假設為益力康營養均衡配方（非高纖版）", "src": ["https://www.enutrition.com.tw/products/feeding-powder-healthlessk-bag", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_f2a72ff7-348e-46cc-98dd-84486782de44.jpg", "https://www.enutrition.com.tw/products/feeding-powder-healthlessk"]},
+  {"id": "efi-kang67", "code": null, "brand": "益富", "name": "益力康 67g", "labelName": "益力康 67g", "cat": "std", "form": "powder", "serving": "67 g（約 300 mL）", "unit": "包", "g": 67, "ml": 300, "kcal": 302, "pro": 10.6, "fat": 11.4, "cho": 39.7, "fib": 1.1, "na": 241, "k": 321, "p": 161, "ca": 277, "water": null, "kcalMl": 1.01, "osm": "300 mOsm/kg（標準沖泡濃度時）", "kitchen": true, "selfpay": false, "stock": false, "tubeOk": true, "mlEst": true, "conf": "medium", "special": "100%濃縮乳清蛋白（蛋白質熱量14%）；芥花油為主，未添加動物性油脂；含黃豆纖維（每56.6 g 0.9 g）；標示『無添加乳糖』但營養標示乳糖0.7 g/份（1.3 g/100 g，來自乳清）；含鉻；鉀較益力壯經典低（479 vs 662 mg/100 g）；奶素可食；含牛奶、黃豆。", "indication": "衛福部許可特定疾病配方食品；適用對象：營養不良者、使用流質或管灌飲食者、身體虛弱者、營養補充者；作為唯一營養來源時每日建議1500大卡。", "note": "官方無 67 g 標示，數值由每 100 g 換算，容量為估計；假設為益力康營養均衡配方", "src": ["https://www.enutrition.com.tw/products/feeding-powder-healthlessk", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_9c5830f8-989b-4222-93ae-130be5585241.jpg", "https://www.enutrition.com.tw/products/feeding-powder-healthlessk-bag"]},
+  {"id": "efi-20", "code": "2814201", "brand": "益富", "name": "益力壯20", "labelName": "益力壯20 營養均衡完整配方（原味）", "cat": "std", "form": "liquid", "serving": "250 mL/罐", "unit": "罐", "g": null, "ml": 250, "kcal": 250, "pro": 12.5, "fat": 7.4, "cho": 33.4, "fib": 0, "na": 270, "k": 403, "p": 202, "ca": 216, "water": null, "kcalMl": 1, "osm": "300 mOsm/kg", "kitchen": false, "selfpay": true, "stock": false, "tubeOk": true, "conf": "high", "special": "蛋白質熱量20%（酪蛋白鈣/鈉為主，另含乳清蛋白、分離黃豆蛋白——3種蛋白）；含中鏈脂肪酸MCT 0.7 g/罐（4種植物油：芥花油、MCT、橄欖油、葡萄籽油）；低渣、膳食纖維0 g；乳糖0、果糖0（不額外添加）；含鉻16.8 µg；28種維生素+礦物質；奶素可食；含牛奶、黃豆。", "indication": "衛福部許可特定疾病配方食品；官方定位『照護銜接、病後補養、虛弱、營養不良』（益力壯即飲系列中蛋白質需求最高）；作為唯一營養來源每日建議6罐。", "src": ["https://www.enutrition.com.tw/products/feeding-liquid-strong20-24", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_666b0cb3-8ea2-4dad-945d-b4c41a58a61b.jpg", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_292508c9-bdc3-414d-907a-6b9cf4f2f7e8.jpg"]},
+  {"id": "efi-17", "code": null, "brand": "益富", "name": "益力壯17", "labelName": "益力壯17 營養均衡完整配方（原味）", "cat": "std", "form": "liquid", "serving": "250 mL/罐", "unit": "罐", "g": null, "ml": 250, "kcal": 250, "pro": 10.4, "fat": 9.2, "cho": 31.4, "fib": 0, "na": 265, "k": 409, "p": 175, "ca": 202, "water": null, "kcalMl": 1, "osm": "300 mOsm/kg", "kitchen": true, "selfpay": false, "stock": true, "tubeOk": true, "conf": "high", "special": "蛋白質熱量約17%（酪蛋白為主，另含乳清蛋白、分離黃豆蛋白）；含中鏈脂肪酸MCT 1.9 g/罐；多元脂肪（芥花油、MCT、橄欖油、葡萄籽油）；無添加膳食纖維（0 g）；0乳糖、不額外添加果糖；含鉻26.5 µg；奶素可食；含牛奶、黃豆。", "indication": "衛福部許可特定疾病配方食品；官方定位『照護銜接、長期補養』，低渣；作為唯一營養來源每日建議6罐。", "src": ["https://www.enutrition.com.tw/products/feeding-liquid-strong17-24", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_f7935b5d-3d6f-4e07-94ba-fbee8cb43f1a.jpg", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_292508c9-bdc3-414d-907a-6b9cf4f2f7e8.jpg"]},
+  {"id": "sentosa-std", "code": null, "brand": "三多", "name": "補体康均衡配方（粉）", "labelName": "三多補体康®均衡配方（粉）", "cat": "std", "form": "powder", "serving": "57.5 g＋200 mL 水（約 250 mL）", "unit": "份", "g": 57.5, "ml": 250, "kcal": 250, "pro": 10.7, "fat": 8.2, "cho": 35, "fib": 3.3, "na": 141, "k": 323, "p": 158, "ca": 220, "water": null, "kcalMl": 1, "osm": "315 mOsm/kg water", "kitchen": true, "selfpay": false, "stock": true, "tubeOk": true, "conf": "high", "special": "乳清蛋白+大豆分離蛋白（雙蛋白）；L-麩醯胺酸1800 mg/份、牛磺酸28.5 mg/份；膳食纖維（難消化性麥芽糊精、菊苣纖維、果寡糖）；含MCT；乳糖0 g；飽和脂肪佔熱量5%；熱量分布P17%/F30%/C53%；含牛奶及大豆", "indication": "特定疾病配方食品；無法由正常飲食得到足夠熱量者、營養不良或攝食不便者、需流質飲食或管灌飲食者、老人或虛弱者、病後補養、無法正常進食者；作為唯一營養來源每日建議6份", "note": "假設為粉狀均衡配方；若院內為液態罐（C經典／HN）數值不同", "src": ["https://www.sentosa.com.tw/zh-hant/products/%E4%B8%89%E5%A4%9A%E8%A3%9C%E4%BD%93%E5%BA%B7%C2%AE%E5%9D%87%E8%A1%A1%E9%85%8D%E6%96%B9865g%E7%BD%90", "https://img.shoplineapp.com/media/image_clips/66eb9154471160000dfe330c/original.jpg", "https://img.shoplineapp.com/media/image_clips/66eb915c8171e7001947c5de/original.jpg"]},
+  {"id": "snd-fiber", "code": null, "brand": "思耐得", "name": "補體素優纖A+", "labelName": "補體素 優纖A+ 均衡營養配方（即飲，無糖不甜）", "cat": "std", "form": "liquid", "serving": "237 mL/罐", "unit": "罐", "g": null, "ml": 237, "kcal": 250, "pro": 10.5, "fat": 8.2, "cho": 35.6, "fib": 4, "na": 160, "k": 220, "p": 135, "ca": 320, "water": null, "kcalMl": 1.05, "osm": "282 mOsm/kg H2O", "kitchen": true, "selfpay": false, "stock": false, "tubeOk": true, "conf": "high", "special": "纖維：難消化性麥芽糊精 Fibersol-2 + 黃豆纖維；乳糖 0 g、糖 0 g；麩胺酸 1600 mg、精胺酸 250 mg、BCAA 1470 mg（白胺酸 700/纈胺酸 425/異白胺酸 345 mg）、MCT(中鏈脂肪酸) 0.5 g、鉻 25 µg、Lutemax 金盞花萃取物（葉黃素）；熱量分布 P16.8%/F29.5%/C53.7%；奶素可食", "indication": "衛福部核准特定疾病配方食品；體質虛弱、食慾差、營養不良之患者；流質/管灌飲食；咀嚼/吞嚥困難、牙科治療；病後調養；外食忙碌者", "note": "無醫令，假設為即飲 237 mL（另有粉狀版本）", "src": ["https://www.smad.com.tw/products/protison-complete-balance-non-sweet-liquid", "https://www.smad.com.tw/products/protison-complete-balance-sweet-liquid"]},
+  {"id": "abt-twocal", "code": "2814039", "brand": "亞培", "name": "安素雙卡（香草）", "labelName": "安素雙卡（香草口味）Ensure Two Cal / 濃縮雙倍特殊液體營養品", "cat": "conc", "form": "liquid", "serving": "237 mL/罐", "unit": "罐", "g": null, "ml": 237, "kcal": 478, "pro": 19.9, "fat": 21.1, "cho": 53.1, "fib": 2, "na": 346, "k": 581, "p": 251, "ca": 251, "water": 164, "kcalMl": 2.02, "osm": "725 mOsm/kg water", "kitchen": true, "selfpay": true, "stock": true, "tubeOk": true, "conf": "high", "special": "膳食纖維2.0 g 全為果寡醣(FOS)；中鏈脂肪酸(MCT) 3.6 g/罐；乳糖0 g；鉻30 µg；鎂100 mg；熱量分佈 蛋白16.7%/脂肪39.7%/醣43.6%；奶素可用；標示『特定疾病配方食品』", "indication": "需高熱量及限水之病人；攝食量有限之營養不良病人；因疾病導致腹水或水腫以致營養不良病人", "src": ["https://www.family.abbott/tw-zh/adult/ensure/product/ensure-double-calories.html", "https://eshop-tw.family.abbott/products/%E4%BA%9E%E5%9F%B9-%E5%AE%89%E7%B4%A0%E9%9B%99%E5%8D%A1-%E6%BF%83%E7%B8%AE%E9%9B%99%E5%80%8D%E7%87%9F%E9%A4%8A%E9%85%8D%E6%96%B9-237ml", "https://cdn.cybassets.com/s/files/17973/ckeditor/pictures/content_7294fb9c-f525-4bf6-bf05-9927db63dcc5.jpg"]},
+  {"id": "abt-ensure-ex", "code": "1828191", "brand": "亞培", "name": "安素Ex", "labelName": "安素EX（Ensure Plus Advance，添加CaHMB）", "cat": "conc", "form": "liquid", "serving": "220 mL/罐", "unit": "罐", "g": null, "ml": 220, "kcal": 330, "pro": 20, "fat": 10.6, "cho": 39.2, "fib": 3.3, "na": 308, "k": 704, "p": 352, "ca": 385, "water": 167, "kcalMl": 1.5, "osm": "845 mOsm/kg water", "kitchen": false, "selfpay": true, "stock": false, "tubeOk": true, "conf": "high", "special": "CaHMB 1520 mg（HMB 1210 mg）/瓶；三重蛋白(乳清、酪蛋白、大豆)，EAA 7.7 g、BCAA 3.7 g；Omega-3 572 mg、Omega-6 3.1 g；膳食纖維3.3 g 為果寡醣；乳糖0；鉻18.3 µg；維生素D 5.9 µg；熱量分佈 蛋白24.34%/脂肪28.89%/醣45.67%/有機酸1.10%；荷蘭製", "indication": "無法從日常飲食中得到足夠營養補充者、體質虛弱者、需要額外營養補充者；特定疾病配方食品，不建議孩童、不適宜孕婦及未滿18歲者", "note": "現行為 220 mL 瓶裝；舊版 237 mL 罐數值不同", "src": ["https://www.family.abbott/tw-zh/adult/ensure/product/ensure-ex.html", "https://www.family.abbott/adobe/dynamicmedia/deliver/dm-aid--b393ea62-63f6-4170-a122-ed5bc91630da/sc-3931-18.png", "https://www.family.abbott/adobe/dynamicmedia/deliver/dm-aid--0ed6277d-f002-4aa5-9525-743565b61455/sc-3931-16.png"]},
+  {"id": "snd-dm-cr100", "code": "1828213", "brand": "補體素", "name": "糖尿病鉻100", "labelName": "補體素 鉻100 糖尿病適用配方（即飲，無糖不甜）237 mL", "cat": "dm", "form": "liquid", "serving": "237 mL/罐", "unit": "罐", "g": null, "ml": 237, "kcal": 235, "pro": 12, "fat": 9, "cho": 29, "fib": 5, "na": 194, "k": 237, "p": 160, "ca": 320, "water": null, "kcalMl": 0.99, "osm": null, "kitchen": false, "selfpay": true, "stock": true, "tubeOk": true, "conf": "high", "special": "鉻 100 µg（菸鹼酸鉻 ChromeMate）；纖維：菊糖（菊苣纖維）+ 難消化性麥芽糊精 Fibersol-2；乳糖 0 g、糖 0 g、蔗糖/果糖 0 g；麩胺酸 2800 mg、精胺酸 415 mg、BCAA 2400 mg、必需胺基酸 4500 mg、共軛亞麻油酸 CLA 0.1 g、MCT(中鏈脂肪酸) 0.5 g、肌醇 200 mg；含金盞花萃取物 Lutemax；低GI；奶素可食", "indication": "衛福部核准特定疾病配方食品；營養不良之第二型糖尿病適用；可取代部分正餐或管灌飲食作唯一營養來源（依醫師/營養師指示）", "src": ["https://www.smad.com.tw/products/protison-diabetes-non-sweet-liquid"]},
+  {"id": "sentosa-d", "code": null, "brand": "三多", "name": "補体康D 糖尿病", "labelName": "三多補体康®D糖尿病營養配方（液，240 mL罐）", "cat": "dm", "form": "liquid", "serving": "240 mL/罐", "unit": "罐", "g": null, "ml": 240, "kcal": 250, "pro": 12.5, "fat": 11.1, "cho": 26.9, "fib": 3.6, "na": 204, "k": 336, "p": 192, "ca": 228, "water": null, "kcalMl": 1.04, "osm": null, "kitchen": true, "selfpay": false, "stock": true, "tubeOk": true, "conf": "high", "special": "低GI；鉻100 µg/罐（吡啶甲酸鉻）、鋅4.3 mg、肌醇216 mg、牛磺酸29 mg、左旋肉鹼24 mg；麩胺酸（含麩醯胺酸）2800 mg；單元不飽和脂肪7.0 g；飽和脂肪<7%熱量；乳糖0 g、糖1.2 g；雙纖維；含異麥芽酮糖、麥芽糖醇；熱量分布P20%/F40%/C40%", "indication": "特定疾病配方食品；糖尿病、血糖代謝異常患者；口飲建議每日2罐，作為唯一營養來源（管灌）建議每日6罐", "src": ["https://www.sentosa.com.tw/zh-hant/products/proticome-d-1", "https://img.shoplineapp.com/media/image_clips/66c58bc6953734001cee72ca/original.jpg"]},
+  {"id": "efi-dm-pack", "code": null, "brand": "益富", "name": "益力壯糖尿病配方（香草）", "labelName": "益力壯糖尿病適用配方 方便包（香草口味）55 g", "cat": "dm", "form": "powder", "serving": "55 g 沖成 250 mL", "unit": "包", "g": 55, "ml": 250, "kcal": 251, "pro": 12.4, "fat": 10.4, "cho": 29, "fib": 4.2, "na": 234, "k": 299, "p": 142, "ca": 176, "water": null, "kcalMl": 1, "osm": "300 mOsm/kg", "kitchen": true, "selfpay": false, "stock": false, "tubeOk": null, "conf": "high", "special": "鉻101 µg/份（吡啶甲酸鉻）；水溶性纖維2.5 g+非水溶性1.7 g（菊糖、黃豆纖維、阿拉伯膠、關華豆膠、抗性澱粉）；白腎豆萃取物；乳糖0.5 g、糖4.1 g；MUFA 6.1 g、PUFA 2.8 g；乳清蛋白+分離黃豆蛋白；熱量比 P20%/F37%/C43%；含牛奶及黃豆製品", "indication": "第一型&第二型糖尿病友、血糖代謝異常、需低GI飲食；作為唯一營養來源每日建議6份", "note": "院內清單只寫「益力壯糖尿病配方（香草）」，採方便包 55 g；即飲 250 mL 版熱量、蛋白質相同", "src": ["https://www.enutrition.com.tw/products/diabetes-powder-strong-dm-vanilla-bag-1", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_80743d27-ab82-4ac0-9347-5014ae327fd3.jpg"]},
+  {"id": "efi-energy", "code": "2814107", "brand": "益富", "name": "易能充", "labelName": "易能充 慢性腎臟病適用配方（未洗腎）", "cat": "calmod", "form": "powder", "serving": "45 g 沖成 200 mL", "unit": "包", "g": 45, "ml": 200, "kcal": 200, "pro": 0.8, "fat": 8.2, "cho": 31.8, "fib": 1.9, "na": 113, "k": 108, "p": 42, "ca": 171, "water": null, "kcalMl": 1, "osm": "280 mOsm/kg", "kitchen": true, "selfpay": true, "stock": true, "tubeOk": null, "conf": "high", "special": "極低蛋白（熱量比 P1.6%/F36.9%/C61.5%）；乳糖0 g；菊糖；鎂36.9 mg；氯174 mg；含牛奶製品（乾酪素鈉）", "indication": "專為慢性腎臟病人設計之營養調整補充配方食品（提高脂肪，減少蛋白質、鈉、磷、鉀等）；不適合作為唯一營養來源；建議每日2包（早餐飲品/餐間點心/直接入菜）", "src": ["https://www.enutrition.com.tw/products/kidney-powder-ckd", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_fa131968-f961-4334-8b7a-015e12184a36.jpg", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_f0578ec1-8120-4514-9a44-8c789479f113.jpg"]},
+  {"id": "abt-suplena", "code": "2814012", "brand": "亞培", "name": "腎補納", "labelName": "腎補納／勝補納 Suplena（未洗腎配方）", "cat": "ckd", "form": "liquid", "serving": "237 mL/罐", "unit": "罐", "g": null, "ml": 237, "kcal": 425, "pro": 10.6, "fat": 22.7, "cho": 46.4, "fib": 3, "na": 190, "k": 270, "p": 170, "ca": 250, "water": 175, "kcalMl": 1.79, "osm": "780 mOsm/kg water", "kitchen": false, "selfpay": true, "stock": false, "tubeOk": true, "conf": "high", "special": "低蛋白(熱量分佈 蛋白10%/醣42%/脂肪48%)；GI 38；蛋胺酸300 mg、精胺酸372 mg、麩醯胺酸1.1 g；α-次亞麻油酸555 mg；鎂74 mg；鉻30 µg；乳糖0；葉酸140 µg；標示建議依醫師指示額外補充維生素D", "indication": "急性腎臟病患者、慢性腎臟病患者、未洗腎的尿毒症患者、需要血糖管理的慢性腎臟病患", "note": "亞培現名「勝補納」", "src": ["https://www.family.abbott/tw-zh/adult/nepro/product/suplena-non-dialysis-formula.html", "https://eshop-tw.family.abbott/products/%E5%8B%9D%E8%A3%9C%E7%B4%8D%E6%9C%AA%E6%B4%97%E8%85%8E%E6%82%A3%E8%80%85%E9%81%A9%E7%94%A8-237%E6%AF%AB%E5%8D%87-x-24%E5%85%A5-%E7%AE%B1%E8%B3%BC", "https://cdn.cybassets.com/s/files/17973/ckeditor/pictures/content_a0b0f084-8f4b-48f7-8063-c8027f90e759.jpg"]},
+  {"id": "sentosa-lpf", "code": null, "brand": "三多", "name": "補体康LPF 低蛋白腎臟病配方", "labelName": "三多補体康®低蛋白營養配方（未洗腎適用，液，240 mL罐）", "cat": "ckd", "form": "liquid", "serving": "240 mL/罐", "unit": "罐", "g": null, "ml": 240, "kcal": 425, "pro": 8.5, "fat": 21.3, "cho": 51.8, "fib": 4.1, "na": 190, "k": 240, "p": 170, "ca": 250, "water": null, "kcalMl": 1.77, "osm": null, "kitchen": true, "selfpay": false, "stock": true, "tubeOk": true, "conf": "high", "special": "高熱量密度（廠商宣稱1.8 kcal/mL；標示177 kcal/100 mL）；低鈉磷鉀；低GI（GI 47.2）；麩醯胺酸2000 mg、左旋肉鹼67 mg、牛磺酸31 mg/罐；單元不飽和脂肪13.4 g；膳食纖維4.1 g；乳糖0 g；熱量分布約P8%/F45%/C47%", "indication": "特定疾病配方食品；未洗腎的急性及慢性腎衰竭患者、糖尿病腎病變患者", "note": "官網品名「補体康低蛋白營養配方」240 mL 罐；「LPF」在官網另指勝補康粉劑（每份 238 kcal、蛋白質 3.9 g）", "src": ["https://www.sentosa.com.tw/zh-hant/products/proticome-p-1", "https://img.shoplineapp.com/media/image_clips/668e372adb99f30010d181a3/original.jpg", "https://www.watsons.com.tw/sentosa-%E4%B8%89%E5%A4%9A-2%E7%AE%B1-%E4%B8%89%E5%A4%9A%E8%A3%9C%E4%BD%93%E5%BA%B7%E4%BD%8E%E8%9B%8B%E7%99%BD%E7%87%9F%E9%A4%8A%E9%85%8D%E6%96%B9240ml-24%E5%85%A5-%E7%AE%B1/p/BP_146369"]},
+  {"id": "efi-yuanqi", "code": "2814134", "brand": "益富", "name": "元氣強", "labelName": "元氣強 洗腎適用配方", "cat": "promod", "form": "powder", "serving": "24 g 沖成 100 mL", "unit": "包", "g": 24, "ml": 100, "kcal": 104, "pro": 8.4, "fat": 3.5, "cho": 10.2, "fib": 1.2, "na": 107, "k": 41, "p": 86, "ca": 79, "water": null, "kcalMl": 1.04, "osm": "280 mOsm/kg", "kitchen": true, "selfpay": true, "stock": true, "tubeOk": null, "conf": "high", "special": "高蛋白（熱量比 P32.5%/F30.3%/C37.2%）；蛋白主要為分離黃豆蛋白（PDCAAS 1.0），磷多為有機磷，廠商稱單獨食用不需另加磷結合劑；精胺酸0.6 g；左旋肉鹼13.7 mg；乳糖0 g；鎂9.6 mg；含牛奶及黃豆製品", "indication": "專為洗腎病人設計之營養調整補充配方食品（提高蛋白質，減少碳水、鎂、鋅、碘及鉀）；不適合作為唯一營養來源；建議每日3包（早餐/餐間/透析中或後）", "src": ["https://www.enutrition.com.tw/products/kidney-powder-dialysis", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_b872196c-7ae4-4c39-b3c8-108c8f9b7c86.jpg", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_35eb3716-432b-46cf-a858-d571af12a6ff.jpg"]},
+  {"id": "abt-nepro", "code": "2814013", "brand": "亞培", "name": "普寧勝", "labelName": "普寧勝 Nepro（洗腎配方）", "cat": "hd", "form": "liquid", "serving": "237 mL/罐", "unit": "罐", "g": null, "ml": 237, "kcal": 425, "pro": 19.1, "fat": 22.7, "cho": 37.9, "fib": 3, "na": 250, "k": 250, "p": 170, "ca": 250, "water": 172, "kcalMl": 1.79, "osm": "745 mOsm/kg water", "kitchen": false, "selfpay": true, "stock": true, "tubeOk": true, "conf": "high", "special": "熱量分佈 蛋白18%/醣34%/脂肪48%；GI 34；蛋胺酸529 mg、精胺酸600 mg；α-次亞麻油酸580 mg；鎂74 mg；鉻30 µg；乳糖0；葉酸148 µg；標示建議依醫師指示額外補充維生素D", "indication": "因急性或慢性腎臟病而洗腎患者、腎臟移植患者、飲食須限磷鈉鉀及水分者、需低GI飲食的洗腎患者(糖尿病腎病變)", "src": ["https://www.family.abbott/tw-zh/adult/nepro/product/nepro-dialysis-formula.html", "https://eshop-tw.family.abbott/products/%E6%99%AE%E5%AF%A7%E5%8B%9D%E6%B4%97%E8%85%8E%E6%82%A3%E8%80%85%E9%81%A9%E7%94%A8-237%E6%AF%AB%E5%8D%87-x-24%E5%85%A5-%E7%AE%B1%E8%B3%BC", "https://cdn.cybassets.com/s/files/17973/ckeditor/pictures/content_aaaaf9f8-3eda-4661-ac03-d112a3cc6226.jpg"]},
+  {"id": "qk-renal", "code": null, "brand": "桂格", "name": "完膳 洗腎配方", "labelName": "桂格完膳 洗腎專用營養配方（洗腎病患配方）237 mL", "cat": "hd", "form": "liquid", "serving": "237 mL/罐", "unit": "罐", "g": null, "ml": 237, "kcal": 475, "pro": 21.4, "fat": 23.8, "cho": 45.8, "fib": 4, "na": 200, "k": 200, "p": 165, "ca": 250, "water": 170, "kcalMl": 2, "osm": "760 mOsm/kg H2O", "kitchen": true, "selfpay": false, "stock": false, "tubeOk": true, "conf": "high", "special": "熱量分布 P18%/F45%/C37%；BCAA 4100 mg、標示『麩胺酸』4500 mg（成分含麩醯胺酸胜肽）、精胺酸 700 mg、MCT(中鏈脂肪酸) 3.6 g、左旋肉鹼 90 mg、牛磺酸 42 mg、肌醇 150 mg；綠茶萃取物(EGCG)；纖維：難消化性麥芽糊精、菊糖、果寡醣；糖 6.3 g、乳糖 0 g；鎂 50 mg、鉻 31 µg；蛋白：乾酪素鈣/鈉、濃縮乳清蛋白、分離大豆蛋白", "indication": "特定疾病配方食品；急、慢性腎衰竭需洗腎之營養不良患者；需限制磷、鈉、鉀及水分攝取者", "src": ["https://quakernutrition.sfworldwide.com/Product/dialysis/%E6%B4%97%E8%85%8E%E5%B0%88%E7%94%A8%E7%87%9F%E9%A4%8A%E9%85%8D%E6%96%B9_new"]},
+  {"id": "efi-peptide", "code": "2814141", "brand": "益富", "name": "新普派", "labelName": "新普派 均衡預解配方", "cat": "pep", "form": "powder", "serving": "65 g 沖成約 260 mL", "unit": "份", "g": 65, "ml": 260, "kcal": 260, "pro": 13, "fat": 4.4, "cho": 42, "fib": 0, "na": 299, "k": 292, "p": 159, "ca": 174, "water": null, "kcalMl": 1, "osm": "395 mOsm/kg", "kitchen": true, "selfpay": true, "stock": true, "tubeOk": true, "conf": "high", "special": "100%水解乳清蛋白（胜肽型）；中鏈脂肪酸2.2 g/份（約占脂肪50%，主要來自MCT）；低脂（熱量比 P20%/F15%/C65%）；乳糖0 g；無纖維（低渣）；左旋肉鹼34.4 mg、牛磺酸34.4 mg；含牛奶製品，產線處理黃豆", "indication": "腸胃消化吸收功能障礙者；靜脈營養轉到腸道營養者；作為唯一營養來源每日建議1500大卡", "src": ["https://www.enutrition.com.tw/products/supplements-predigested", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_6b46154c-7a9f-4b93-96c5-6f6a918f381a.jpg"]},
+  {"id": "nestle-peptamen", "code": null, "brand": "雀巢", "name": "佳易得", "labelName": "佳易得 Peptamen 水解乳清蛋白配方（粉狀，香草口味，400 g/罐）", "cat": "pep", "form": "powder", "serving": "55 g 沖成 250 mL", "unit": "份", "g": 55, "ml": 250, "kcal": 256, "pro": 12.9, "fat": 9.9, "cho": 28.9, "fib": 0, "na": 220, "k": 288, "p": 171, "ca": 242, "water": null, "kcalMl": 1.02, "osm": "410 mOsm/kg water", "kitchen": true, "selfpay": false, "stock": false, "tubeOk": true, "conf": "high", "special": "100%高度水解乳清蛋白(水解胜肽，95%分子<5000 Da)；中鏈脂肪酸7 g/份(占總脂肪70%)；乳糖0、不含麩質；BCAA 2.6 g、白胺酸1.27 g、精胺酸0.6 g；無膳食纖維；鉻10.5 µg；瑞士製", "indication": "營養消化吸收不良者；需要一般管灌飲食者", "note": "粉狀 400 g 罐；官網無法讀取，數值取自雀巢 PChome 品牌館標示圖", "src": ["https://24h.pchome.com.tw/prod/DBBA5U-A900IF52B", "https://img.pchome.com.tw/cs/items/DBBA5UA900IF52B/i010008_1749699347.jpg", "https://img.pchome.com.tw/cs/items/DBBA5UA900IF52B/i010009_1749699348.jpg"]},
+  {"id": "efi-onc", "code": "1828189", "brand": "益富", "name": "益力壯高效魚油優蛋白", "labelName": "益力壯高效魚油優蛋白配方（現官網名：益力壯-腫瘤配方，果汁牛奶風味）237 mL", "cat": "onc", "form": "liquid", "serving": "237 mL/罐", "unit": "罐", "g": null, "ml": 237, "kcal": 355, "pro": 22.6, "fat": 15.6, "cho": 32.4, "fib": 2.7, "na": 173, "k": 367, "p": 293, "ca": 294, "water": null, "kcalMl": 1.5, "osm": "350 mOsm/kg H2O", "kitchen": false, "selfpay": true, "stock": false, "tubeOk": null, "conf": "high", "special": "rTG型魚油：EPA 1.1 g、DHA 0.3 g、Omega-3 2.1 g/罐；精胺酸700 mg（來自酪蛋白）；BCAA 4385 mg；白胺酸2040 mg；MCT；菊糖；糖1.3 g、乳糖0 g；鋅5.74 mg；羅漢果甜味劑；含牛奶及魚類", "indication": "專為腫瘤病人設計（治療期間/代謝異常、味覺改變、體重下降）；每日建議2罐；不適合作為唯一營養來源；CKD需限蛋白者應經評估", "note": "官網現名「益力壯-腫瘤配方」，請確認與院內品項相同", "src": ["https://www.enutrition.com.tw/products/series-liquid-fishoil-24", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_eaefbb34-1188-474d-96b9-0e8c864852d6.jpg"]},
+  {"id": "kabi-supportan", "code": "1828058", "brand": "卡比", "name": "倍速（熱帶水果）", "labelName": "倍速 Supportan 癌症專用配方（熱帶水果口味）200 mL", "cat": "onc", "form": "liquid", "serving": "200 mL/瓶", "unit": "瓶", "g": null, "ml": 200, "kcal": 300, "pro": 20, "fat": 13.4, "cho": 26.2, "fib": 3, "na": 95, "k": 256, "p": 240, "ca": 406, "water": null, "kcalMl": 1.5, "osm": "510 mOsm/kg H2O（經銷商頁；另有來源稱卡布奇諾口味 575）", "kitchen": false, "selfpay": true, "stock": false, "tubeOk": true, "conf": "high", "special": "EPA 1.0 g/瓶（魚油，DHA 未標示）；糖 13.0 g；單元不飽和脂肪酸 3.2 g、多元不飽和脂肪酸 4.6 g；高蛋白低醣（官方稱依 2023/1/5 食藥署資料，於癌症液態配方中每100mL EPA與蛋白質最高、醣類最低）；經銷頁提及含 MCT、菊糖；含牛乳蛋白及魚油（素食者不宜）", "indication": "特定疾病配方食品；腫瘤、癌症惡病質、慢性異化疾病患者營養補充；療程前/中/後；配合一般飲食每日2瓶", "note": "滲透壓與可管灌資訊來自經銷商頁", "src": ["https://www.fresenius-kabi-en.com.tw/supportan/", "https://www.fresenius-kabi-en.com.tw/supportan/Content/assets/img/home/composition-pc.png", "https://www.cancare.com.tw/supportan/"]},
+  {"id": "snd-beli", "code": "1828185", "brand": "補體素", "name": "倍力（燕麥）", "labelName": "補體素 倍力 腫瘤癌症適用配方（燕麥風味）237 mL", "cat": "onc", "form": "liquid", "serving": "237 mL/罐", "unit": "罐", "g": null, "ml": 237, "kcal": 372, "pro": 21.6, "fat": 10.4, "cho": 49.5, "fib": 3.1, "na": 244, "k": 351, "p": 258, "ca": 330, "water": null, "kcalMl": 1.57, "osm": "680 mOsm/kg H2O", "kitchen": false, "selfpay": true, "stock": false, "tubeOk": true, "conf": "high", "special": "Omega-3 不飽和脂肪酸 1.0 g（來源：DHA 藻油 + 亞麻仁油；無魚油，EPA 未個別標示）；麩胺酸 4400 mg、精胺酸 580 mg、BCAA 4000 mg（含白胺酸 1990 mg）、MCT(中鏈脂肪酸) 1.9 g、左旋肉鹼 25.8 mg、牛磺酸 51.5 mg；蛋白來源：分離牛奶蛋白、酪蛋白鈉、濃縮乳清蛋白；糖 7.2 g、乳糖 0 g；纖維：果寡醣；低GI；奶素可食", "indication": "衛福部核准特定疾病配方食品（腫瘤癌症適用）；營養不良、體重下降、惡病質等腫瘤癌症患者；可用於管灌飲食，適用為唯一營養來源", "note": "Omega-3 來自藻油與亞麻仁油，未標示 EPA", "src": ["https://www.smad.com.tw/products/protison-cancer-oat-liquid"]},
+  {"id": "abt-prosure", "code": "2814083", "brand": "亞培", "name": "倍力素（香草）", "labelName": "倍力素 ProSure 癌症專用即飲配方（香草口味）", "cat": "onc", "form": "liquid", "serving": "220 mL/罐", "unit": "罐", "g": null, "ml": 220, "kcal": 280, "pro": 14.6, "fat": 5.6, "cho": 44.9, "fib": 4.6, "na": 253, "k": 385, "p": 176, "ca": 220, "water": null, "kcalMl": 1.27, "osm": "753 mOsm/kg water", "kitchen": false, "selfpay": true, "stock": false, "tubeOk": true, "conf": "high", "special": "魚油 EPA 1 g、DHA 0.4 g/瓶(rTG魚油)；果寡醣2.4 g(含於膳食纖維4.6 g，另含大豆纖維)；乳糖0；鉻20 µg；熱量分佈 蛋白21%/脂肪18%/醣61%；荷蘭製", "indication": "放射治療、化學治療的患者；體重下降或惡病質的癌症患者；發炎性腸道疾病的患者。本品不適合作為唯一營養來源", "note": "現行為 220 mL 瓶裝；廠商註明不可作唯一營養來源", "src": ["https://www.family.abbott/tw-zh/adult/prosure/product/prosure-vanilla-flavor.html", "https://eshop-tw.family.abbott/products/%E4%BA%9E%E5%9F%B9-%E5%80%8D%E5%8A%9B%E7%B4%A0%E7%99%8C%E7%97%87%E5%B0%88%E7%94%A8%E5%8D%B3%E9%A3%B2%E9%85%8D%E6%96%B9-%E9%A6%99%E8%8D%89%E5%8F%A3%E5%91%B3220ml-x24%E5%85%A5%E7%AE%B1%E8%B3%BC"]},
+  {"id": "bsk-omega", "code": "2814227", "brand": "百仕可", "name": "速益復 omega-3", "labelName": "百仕可 速益復 Omega-3 配方（高蛋白營養素）250 mL", "cat": "onc", "form": "liquid", "serving": "250 mL/瓶", "unit": "瓶", "g": null, "ml": 250, "kcal": 375, "pro": 20, "fat": 16.6, "cho": 38.4, "fib": 3.8, "na": 100, "k": 350, "p": 280, "ca": 380, "water": null, "kcalMl": 1.5, "osm": "480 mOsm/kg H2O", "kitchen": false, "selfpay": true, "stock": false, "tubeOk": null, "conf": "high", "special": "Omega-3 2.5 g（DHA 藻油 3 g 添加；EPA 0.5 g、DHA 1.0 g）；麩胺酸 6000 mg（來自酪蛋白及小麥水解蛋白含麩醯胺酸胜肽）、BCAA 4200 mg、白胺酸 2000 mg、精胺酸 700 mg（標示圖）、MCT(中鏈脂肪酸) 1.8 g、牛磺酸 36 mg；糖 1.4 g、乳糖 0 g；纖維：難消化性麥芽糊精、菊糖、果寡醣；奶蛋素", "indication": "官網現行定位為一般即飲高蛋白營養補充：需補充蛋白質、熱量者；病後補養；增強體力需求者；每日建議 2 罐（官網未標示為腫瘤/特定疾病配方）", "note": "官網定位為一般高蛋白營養素，未標示可管灌", "src": ["https://www.boscogen.com.tw/products/omega3-high-protein", "https://img.shoplineapp.com/media/image_clips/69f3262901ca4cc15d66e35d/original.jpg"]},
+  {"id": "efi-immune", "code": "2814163", "brand": "益富", "name": "勉益增", "labelName": "勉益增 營養調整配方", "cat": "imm", "form": "powder", "serving": "57 g 沖成約 240 mL", "unit": "份", "g": 57, "ml": 240, "kcal": 241, "pro": 13.2, "fat": 7, "cho": 31.3, "fib": 0, "na": 180, "k": 208, "p": 129, "ca": 222, "water": null, "kcalMl": 1, "osm": "430 mOsm/kg", "kitchen": true, "selfpay": true, "stock": true, "tubeOk": null, "conf": "high", "special": "精胺酸2.8 g、麩醯胺酸2.7 g/份；100%濃縮乳清蛋白（熱量比蛋白22%）；中鏈脂肪酸3.2 g（MCT）；左旋肉鹼21.1 mg；提高VitA 337 µgRE、VitC 58.1 mg、鋅4.33 mg、鉻18.2 µg；乳糖0 g、無纖維；含牛奶製品", "indication": "重大手術、創傷/燒灼傷、頭頸部受傷；手術前5天與術後7天使用，日常飲食搭配每日2份；作為唯一營養來源每日建議1500大卡", "src": ["https://www.enutrition.com.tw/products/supplements-nuimmu", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_117c6100-e8bc-46ac-9e7b-e5fac07f0b5c.jpg"]},
+  {"id": "abt-juven", "code": "1828113", "brand": "亞培", "name": "基速得（香橙）", "labelName": "基速得 Abound（香橙口味）傷口營養支援", "cat": "wound", "form": "powder", "serving": "24 g＋237–290 mL 水", "unit": "包", "g": 24, "ml": null, "kcal": 82, "pro": 14, "fat": 0, "cho": 2.3, "fib": null, "na": 4, "k": null, "p": null, "ca": 200, "water": null, "kcalMl": null, "osm": "461 mOsm/kg H2O", "kitchen": false, "selfpay": true, "stock": true, "tubeOk": true, "aaNotProtein": true, "dose": "廠商建議每日 2 包", "conf": "high", "special": "蛋白質14 g 全為游離胺基酸：L-精胺酸7 g + L-麩醯胺酸7 g（廠商：非完全營養配方，不含必需胺基酸）；CaHMB 1.5 g（HMB 1.2 g）；有機酸5.6 g(檸檬酸)；糖1.2 g；含阿斯巴甜(苯酮尿症不宜)；含中鏈三酸甘油酯(微量，脂肪標示0 g)", "indication": "燒燙傷、創傷；壓瘡、黏膜潰瘍；糖尿病患者積極傷口管理；放射或化學治療引起的口腔與黏膜破損；肌肉質量耗損之腫瘤病患；手術、長期傷口問題患者。每日建議2包，不建議作為唯一營養來源", "note": "「蛋白質」14 g 為精胺酸 7 g＋麩醯胺酸 7 g 游離胺基酸", "src": ["https://eshop-tw.family.abbott/products/abound-24gx14", "https://cdn.cybassets.com/s/files/17973/ckeditor/pictures/content_eee28a5f-06c1-4639-8300-a85cdc72a2d2.jpg"]},
+  {"id": "efi-gln", "code": "1828188", "brand": "益富", "name": "福惜素", "labelName": "福惜素 調整胺基酸配方（L-Glutamine）", "cat": "gln", "form": "powder", "serving": "15 g＋150–200 mL 水", "unit": "包", "g": 15, "ml": null, "kcal": 60, "pro": 10.1, "fat": 0.7, "cho": 3.2, "fib": null, "na": 15, "k": null, "p": null, "ca": null, "water": null, "kcalMl": null, "osm": null, "kitchen": false, "selfpay": true, "stock": false, "tubeOk": null, "aaNotProtein": true, "conf": "high", "special": "麩醯胺酸10.0 g/包；維生素C 50 mg；含牛奶及黃豆製品", "indication": "病後補養、體質虛弱者、需營養補充/維持者；不適合作為唯一營養來源；分次於口中含漱10–15秒後吞下", "src": ["https://www.enutrition.com.tw/products/specialty-glutamine", "https://cdn-general.cybassets.com/s/files/22870/ckeditor/pictures/content_defc5337-5b57-40fb-9b30-4fdd4f8ff8d9.jpg"]},
+  {"id": "gt-gln", "code": "2814081", "brand": "吉泰", "name": "速養療", "labelName": "速養遼 SYMPT-X 左旋麩醯胺酸 L-Glutamine（院內品名『速養療』）", "cat": "gln", "form": "powder", "serving": "10 g（1 匙）", "unit": "包", "g": 10, "ml": null, "kcal": 40, "pro": 10, "fat": 0, "cho": 0, "fib": null, "na": 0, "k": null, "p": null, "ca": null, "water": null, "kcalMl": null, "osm": null, "kitchen": false, "selfpay": true, "stock": false, "tubeOk": null, "aaNotProtein": true, "conf": "medium", "special": "左旋麩醯胺酸 10,000 mg/份（純度 99% 以上，美國 USP 等級，SGS 檢測 99.9%）；植物來源發酵、純素可食；非完全營養配方", "indication": "病後補養；成人每次 10 g（或 15 g 隨手包一包），每日 2～3 次，以 180–240 mL 溫冷開水沖泡；兒童每日 0.25–0.5 g/kg 分三次；不建議用於嚴重肝、腎功能不良患者；不可作為唯一營養來源", "note": "官方品名「速養遼」；數值為瓶裝每 10 g 一匙，若院內為 15 g 隨手包請確認", "src": ["https://tspc.shoplineapp.com/products/%E9%80%9F%E9%A4%8A%E9%81%BC280%E5%85%AC%E5%85%8B3%E5%85%A5%E7%A6%AE%E7%9B%92%E7%B5%84-l-glutamine-%E5%B7%A6%E6%97%8B%E9%BA%A9%E9%86%AF%E8%83%BA%E9%85%B8", "https://img.shoplineapp.com/media/image_clips/68f19b3c04ddcd0016bc9ac8/original.jpg", "http://www.sympt-x.com.tw/product/1011"]},
+  {"id": "nestle-preop", "code": "1828173", "brand": "雀巢", "name": "飲沛 空腹期營養", "labelName": "飲沛 空腹期營養（術前ERAS清流碳水飲）", "cat": "clear", "form": "liquid", "serving": "查無標示", "unit": "瓶", "g": null, "ml": null, "kcal": null, "pro": null, "fat": null, "cho": null, "fib": null, "na": null, "k": null, "p": null, "ca": null, "water": null, "kcalMl": null, "osm": null, "kitchen": false, "selfpay": true, "stock": false, "tubeOk": null, "conf": "low", "note": "查不到「飲沛空腹期營養」的公開標示；最接近的是飲沛舒沁 Soothe 清澈乳清蛋白飲，請以院內包裝為準", "src": ["https://www.nestlehealthscience.com.tw/zh/siteassets/impact/soothe"]},
+  {"id": "efi-carb", "code": "2814226", "brand": "益富", "name": "益能康", "labelName": "益能康 碳水化合物補給飲（蘋果風味）300 mL", "cat": "clear", "form": "liquid", "serving": "300 mL/瓶", "unit": "瓶", "g": null, "ml": 300, "kcal": 200, "pro": 0, "fat": 0, "cho": 50, "fib": null, "na": 180, "k": 80, "p": null, "ca": null, "water": null, "kcalMl": 0.67, "osm": null, "kitchen": false, "selfpay": true, "stock": false, "tubeOk": null, "conf": "high", "special": "複合性醣類（麥芽糊精為主）+果糖粉，碳水50 g/瓶（16.7 g/100 mL），糖5 g；無蛋白/脂肪；氯243 mg、鎂39 mg、鋅1.5 mg、硒16.6 µg；蔗糖素；不含防腐劑", "indication": "需補充碳水化合物者；需補充礦物質與水分者；廠商QA稱飲用300 mL即滿足國際共識之50 g碳水（引Anesth Analg 2018）；每次建議1–2瓶；不適用嬰兒及兒童，胃排空延遲者及糖尿病患者使用前請先諮詢醫事人員；勿與其他食品或乳品混合", "note": "官網頁面已下架，數值取自通路頁的廠商標示圖", "src": ["https://www.wellcare.com.tw/wellcare/tw/product/brands/%E7%87%9F%E9%A4%8A%E8%A3%9C%E5%85%85%E5%93%81%E7%89%8C/Efione%E7%9B%8A%E5%AF%8C/Efione%E7%9B%8A%E5%AF%8C*%E7%9B%8A%E8%83%BD%E5%BA%B7%E7%A2%B3%E6%B0%B4%E5%8C%96%E5%90%88%E7%89%A9%E8%A3%9C%E7%B5%A6%E9%A3%B2*(%E8%98%8B%E6%9E%9C%E9%A2%A8%E5%91%B3)*300ml%5E24%E7%93%B6%5E%E7%AE%B1*(%E5%85%B124%E7%93%B6%EF%BC%8C%E5%85%B11%E7%AE%B1)", "https://www.wellcare.com.tw/upload/2025_12_0914/20251209120540nvo685baV2.jpg"]},
+  {"id": "bsk-clear", "code": "2814225", "brand": "百仕可", "name": "復易佳 清流蛋白飲（水蜜桃）", "labelName": "百仕可 復易佳 清流蛋白飲（水蜜桃風味）240 mL", "cat": "clear", "form": "liquid", "serving": "240 mL/瓶", "unit": "瓶", "g": null, "ml": 240, "kcal": 300, "pro": 10, "fat": 0, "cho": 65, "fib": 0, "na": 4, "k": null, "p": null, "ca": null, "water": null, "kcalMl": 1.25, "osm": null, "kitchen": false, "selfpay": true, "stock": false, "tubeOk": null, "conf": "high", "special": "100% 透明分離乳清蛋白；0 脂肪、0 纖維、0 乳糖、糖 16 g；EAA 5000 mg、BCAA 2400 mg（白胺酸 1200/異白胺酸 650/纈胺酸 550 mg）、精胺酸 220 mg、麩醯胺酸 1800 mg；無咖啡因、無添加甜味劑；充氮包裝；熱量分布 P13.3%/F0%/C86.7%；碳水來源：麥芽糖、麥芽糊精、蘋果濃縮汁；未添加維生素礦物質；宣稱符合 ESPEN 與 ERAS 指引", "indication": "一般營養（非特定疾病配方）；需清澈流質飲食者、需無脂營養補充者、無法正常進食或進食困難者、虛弱體質、無法從日常飲食獲取營養者；低渣/清流質飲食、檢查/手術前後（依醫師指示）；每日 1–6 罐", "src": ["https://www.boscogen.com.tw/products/low-residue-diet", "https://img.shoplineapp.com/media/image_clips/69fd92771a6fe43fa594fea9/original.jpg"]},
+  {"id": "sentosa-whey", "code": "2814222", "brand": "三多", "name": "乳清蛋白C+I", "labelName": "三多乳清蛋白C+I（Whey Protein Concentrate + Isolate）", "cat": "promod", "form": "powder", "serving": "1 平匙約 5 g", "unit": "匙", "g": 5, "ml": null, "kcal": 20, "pro": 4.1, "fat": 0.2, "cho": 0.3, "fib": null, "na": null, "k": null, "p": null, "ca": null, "water": null, "kcalMl": null, "osm": null, "kitchen": false, "selfpay": true, "stock": true, "tubeOk": null, "conf": "medium", "special": "濃縮乳清蛋白（含大豆卵磷脂）+分離乳清蛋白；BCAA 2670 mg/份（白胺酸1335、異白胺酸765、纈胺酸570 mg）；糖0.3 g；每匙(約5 g)推算≈19.7 kcal、4.1 g蛋白質；原產地美國；奶素", "indication": "一般食品（運動/營養補充）；體質虛弱者、成長期青少年、病後調養、中老年人營養補充、運動前後；建議每日3–12匙，可依體重：50–60 kg 4匙、60–70 kg 5匙、70–80 kg 6匙", "note": "每匙由「3 平匙約 15 g」換算；標示無鈉、鉀、磷", "src": ["https://www.sentosa.com.tw/zh-hant/products/whey-protein-ci-concentrate--isolate", "https://img.shoplineapp.com/media/image_clips/6462e0f183b9ca0014b98446/original.jpg", "https://www.sentosa.com.tw/zh-hant/products/%E4%B8%89%E5%A4%9A%E4%B9%B3%E6%B8%85%E8%9B%8B%E7%99%BDci-1000g%E8%A2%8B"]},
+  {"id": "sentosa-malto", "code": null, "brand": "三多", "name": "粉飴", "labelName": "三多粉飴（麥芽糊精 Maltodextrin，1000 g包）", "cat": "calmod", "form": "powder", "serving": "15 g", "unit": "份", "g": 15, "ml": null, "kcal": 58, "pro": 0, "fat": 0, "cho": 14.4, "fib": null, "na": 4, "k": 0, "p": null, "ca": null, "water": null, "kcalMl": null, "osm": null, "kitchen": true, "selfpay": false, "stock": false, "tubeOk": null, "conf": "high", "special": "100%麥芽糊精（玉米澱粉水解噴霧乾燥）；糖0.5 g/份；無脂肪無蛋白質；低鈉；原產地印度", "indication": "能量補充食品；可添加於牛奶、果汁、菜湯、稀飯等以補充熱量；添加於流質飲食或低蛋白、低油脂飲食中請依營養師指導使用", "src": ["https://www.sentosa.com.tw/zh-hant/products/%E4%B8%89%E5%A4%9A%E7%B2%89%E9%A3%B4-1000g%E5%8C%85", "https://img.shoplineapp.com/media/image_clips/650cf4b55ca1a40020eae2ee/original.jpg"]},
+  {"id": "sentosa-yeast", "code": null, "brand": "三多", "name": "啤酒酵母", "labelName": "三多啤酒酵母粉（400 g罐）", "cat": "yeast", "form": "powder", "serving": "10 g（2 匙）", "unit": "份", "g": 10, "ml": null, "kcal": 33, "pro": 4.9, "fat": 0.3, "cho": 3.8, "fib": 2.5, "na": 12, "k": 220, "p": 150, "ca": 12, "water": null, "kcalMl": null, "osm": null, "kitchen": true, "selfpay": false, "stock": false, "tubeOk": null, "conf": "high", "special": "100%啤酒酵母粉（非活性），法國製；B群：B1 4.1 mg、B2 0.4 mg、B6 0.3 mg、葉酸260 µg、菸鹼素2.3 mg NE/份；鎂15 mg、鐵0.35 mg、鋅0.65 mg；糖0 g；純素", "indication": "一般營養補充品；兒童、青少年、孕哺婦女、成人、銀髮族、素食者；每次2匙、每日1–3次。警語：高尿酸血症（痛風）及腎臟疾病患者補充前請先諮詢醫師/藥師/營養師", "src": ["https://www.sentosa.com.tw/zh-hant/products/%E4%B8%89%E5%A4%9A%E5%95%A4%E9%85%92%E9%85%B5%E6%AF%8D%E7%B2%89-400g%E7%BD%90", "https://i.imgur.com/oxlGtu8.jpg"]},
+  {"id": "sentosa-fiber", "code": null, "brand": "三多", "name": "膳食纖維", "labelName": "三多健康膳食纖維（健字號，350 g罐）", "cat": "fib", "form": "powder", "serving": "10 g（2 平匙）", "unit": "份", "g": 10, "ml": null, "kcal": 23, "pro": 0, "fat": 0, "cho": 9.5, "fib": 7.6, "na": 3, "k": null, "p": null, "ca": null, "water": null, "kcalMl": null, "osm": null, "kitchen": true, "selfpay": false, "stock": true, "tubeOk": null, "conf": "high", "special": "100%菊苣纖維（菊糖，水溶性），比利時；每10 g含菊苣纖維7.6–9.2 g；糖0.8 g；純素；國家健康食品（胃腸功能改善）", "indication": "健康食品：有助於增加腸內益生菌、減少腸內害菌，維持消化道機能、使排便順暢；每次10 g溫熱開水150 mL沖調，每日2次餐後；有腸胃炎或過敏者使用前應徵詢醫師", "src": ["https://www.sentosa.com.tw/zh-hant/products/%E4%B8%89%E5%A4%9A%E5%81%A5%E5%BA%B7%E8%86%B3%E9%A3%9F%E7%BA%96%E7%B6%AD-350g%E7%BD%90", "https://shoplineimg.com/5c0646cf2cf7f20001422a12/691d38324ab7de000cb9220b/2000x.jpg", "https://shoplineimg.com/5c0646cf2cf7f20001422a12/691d3831f1415d0016b0243f/2000x.jpg"]},
+  {"id": "bsk-pork", "code": "2814228", "brand": "百仕可", "name": "豬肉洋芋煮", "labelName": "百仕可 銀髮介護食 豬肉洋芋煮（葷）120 g", "cat": "food", "form": "food", "serving": "1包 120 g（本包裝含1份）", "unit": "包", "g": 120, "ml": null, "kcal": 86, "pro": 5.5, "fat": 2.8, "cho": 9.7, "fib": null, "na": 200, "k": 205, "p": 61, "ca": null, "water": null, "kcalMl": null, "osm": null, "kitchen": false, "selfpay": true, "stock": false, "tubeOk": false, "conf": "high", "special": "質地：IDDSI 第6級『軟質及一口量』；國健署第6級『牙齦碎軟質食』；每份約 24 g 國產豬肉；糖 1.8 g、飽和脂肪 0.6 g；常溫調理包，隔水加熱 2–4 分鐘；含大豆、麩質穀物", "indication": "牙口咬合力微幅退化、生活可自理的銀髮長輩；咀嚼能力下降者；有明顯吞嚥困難/嗆咳者應先經醫師、營養師或語言治療師評估", "note": "IDDSI 第 6 級（軟質、一口大小）", "src": ["https://www.boscogen.com.tw/products/pork-potato-care-food", "https://shoplineimg.com/5f3dd83c585c3d0011a3ee78/66c402c7147222001da1663b/1080x.jpg"]},
+  {"id": "bsk-chicken", "code": "2814229", "brand": "百仕可", "name": "雞肉親子丼", "labelName": "百仕可 銀髮介護食 雞肉親子丼（葷）120 g", "cat": "food", "form": "food", "serving": "1包 120 g（本包裝含1份）", "unit": "包", "g": 120, "ml": null, "kcal": 102, "pro": 6.8, "fat": 6.8, "cho": 3.4, "fib": null, "na": 224, "k": 132, "p": 70, "ca": null, "water": null, "kcalMl": null, "osm": null, "kitchen": false, "selfpay": true, "stock": true, "tubeOk": false, "conf": "high", "special": "質地：IDDSI 第5級『細碎及濕軟』；國健署第5級『舌頭壓碎軟食』；每份約 24 g 原型雞肉＋雞蛋；糖 2.6 g、飽和脂肪 1.6 g；常溫調理包，隔水加熱 2–4 分鐘；含雞蛋、魚、大豆、麩質穀物；僅配料無飯（碳水 3.4 g）", "indication": "牙齒咬合困難、需調整食材質地的銀髮長輩；難以咀嚼較大塊食材者；有明顯吞嚥困難/嗆咳者應先經專業評估", "note": "IDDSI 第 5 級（細碎濕軟）；只有丼料，不含白飯", "src": ["https://www.boscogen.com.tw/products/oyakodon-care-food", "https://shoplineimg.com/5f3dd83c585c3d0011a3ee78/6a5845e74352957e9f17c90e/1080x.jpg"]}
+];
+/*DATA-END*/
+const byId = Object.fromEntries(P.map(p => [p.id, p]));
 
-            // Target Protein based on Disease
-            let proPerKg = 1.0;
-            if (disease === 'ckd_ndd') proPerKg = 0.7;
-            else if (disease === 'ckd_hd') proPerKg = 1.2;
-            else if (disease === 'cancer' || disease === 'wound') proPerKg = 1.5;
+/* ---------- needs ---------- */
+const TAB = [ // basis table shown in the UI, one row per situation
+  { k: 'base', t: '一般成人（住院／門診）', kcal: [25, 30, 30], pro: [1.0, 1.2, 1.0], src: 'ESPEN 多重疾病住院 2018' },
+  { k: 'old', t: '65 歲以上', kcal: [27, 30, 30], pro: [1.0, 1.5, 1.2], src: 'ESPEN 老年 2022；PROT-AGE' },
+  { k: 'icu', t: '重症（加護病房）', kcal: [20, 25, 25], pro: [1.2, 2.0, 1.3], src: 'ESPEN ICU 2023（前 3 天 ≤70%）' },
+  { k: 'surg', t: '重大手術前後', kcal: [25, 30, 30], pro: [1.5, 1.5, 1.5], src: 'ESPEN 手術 2021' },
+  { k: 'wound', t: '壓傷第 2 期以上', kcal: [30, 35, 30], pro: [1.25, 1.5, 1.5], src: 'NPIAP/EPUAP 2019' },
+  { k: 'onc', t: '癌症', kcal: [25, 30, 30], pro: [1.0, 1.5, 1.2], src: 'ESPEN 癌症 2021' },
+  { k: 'cirr', t: '肝硬化', kcal: [30, 35, 35], pro: [1.2, 1.5, 1.2], src: 'ESPEN 肝病 2019' },
+  { k: 'burn', t: '燒傷／重大創傷', kcal: [25, 35, 30], pro: [1.5, 2.0, 1.5], src: 'ESPEN 燒傷 2013；ICU 2023' },
+  { k: 'hd', t: '血液／腹膜透析', kcal: [25, 35, 30], pro: [1.0, 1.2, 1.2], src: 'KDOQI 2020；住院 ≥1.2（ESPEN 2021）' },
+  { k: 'hdicu', t: '透析＋重症', kcal: [20, 25, 25], pro: [1.3, 1.5, 1.3], src: 'ESPEN 住院腎病 2021（間歇透析；CRRT 1.5–1.7）' },
+  { k: 'ckdOpd', t: 'CKD 3–5 未透析，穩定（門診）', kcal: [25, 35, 30], pro: [0.55, 0.6, 0.6], src: 'KDOQI 2020' },
+  { k: 'ckdOpdDm', t: 'CKD 3–5 未透析＋糖尿病（門診）', kcal: [25, 35, 30], pro: [0.6, 0.8, 0.7], src: 'KDOQI 2020' },
+  { k: 'ckdWard', t: 'CKD 未透析，住院非高分解', kcal: [25, 35, 30], pro: [0.6, 0.8, 0.7], src: 'ESPEN 住院腎病 2021' },
+  { k: 'ckdCat', t: 'CKD 未透析＋急性病（手術、傷口、燒傷、癌症治療）', kcal: [25, 30, 30], pro: [1.0, 1.3, 1.0], src: 'ESPEN 住院腎病 2021' },
+  { k: 'ckdIcu', t: 'CKD 未透析＋重症', kcal: [20, 25, 25], pro: [1.0, 1.3, 1.0], src: 'ESPEN 住院腎病 2021' }
+];
+const T = Object.fromEntries(TAB.map(x => [x.k, x]));
 
-            const targetProtein = Math.round(ibw * proPerKg * 10) / 10;
-            document.getElementById('target-protein').innerText = `${targetProtein} g`;
-            document.getElementById('target-pro-text').innerText = targetProtein;
+function ibwOf(s) {
+  const h = num(s.ht); if (!h) return null;
+  if (s.ibwM === 'bmi22') return r1(22 * (h / 100) ** 2);
+  const v = s.sex === 'f' ? (h - 70) * 0.6 : (h - 80) * 0.7;
+  return v > 0 ? r1(v) : null;
+}
 
-            calculateNutrition();
+function needs(s) {
+  const c = s.c || {};
+  const out = { errs: [], notes: [], why: [] };
+  const h = num(s.ht), wt = num(s.wt), dry = num(s.dry), age = num(s.age);
+  if (age !== null && age < 18) out.errs.push('本工具只適用成人（≥18 歲）。');
+  if (h !== null && (h < 120 || h > 220)) out.errs.push('身高超出 120–220 cm，請確認。');
+  if (wt !== null && (wt < 25 || wt > 250)) out.errs.push('體重超出 25–250 kg，請確認。');
+  if (!s.sex && s.ibwM !== 'bmi22') out.errs.push('理想體重需要性別。');
+  const ibw = s.sex || s.ibwM === 'bmi22' ? ibwOf(s) : null;
+  const w = dry || wt;
+  out.ibw = ibw; out.bmi = h && wt ? r1(wt / (h / 100) ** 2) : null;
+  out.bmiDry = h && dry ? r1(dry / (h / 100) ** 2) : null;
+  if (!h || !wt || !ibw) { out.ready = false; return out; }
+  out.ready = true;
+  out.adj = r1(ibw + 0.25 * (w - ibw));
+  let basis = s.wBasis || 'auto', dw;
+  if (basis === 'auto') basis = w > 1.2 * ibw ? 'adj' : 'actual';
+  dw = basis === 'adj' ? (w > ibw ? out.adj : w) : basis === 'ibw' ? ibw : w;
+  out.basis = basis; out.dw = r1(dw);
+  out.basisLabel = { actual: dry ? '乾體重' : '實際體重', ibw: '理想體重', adj: '校正體重' }[basis];
+  if ((s.wBasis || 'auto') === 'auto') out.why.push(basis === 'adj' ? `體重 ${w} kg >120% 理想體重 ${ibw} kg → 用校正體重` : `體重 ≤120% 理想體重 → 用${out.basisLabel}`);
+
+  // energy & protein rows
+  const icu = s.setting === 'icu', opd = s.setting === 'opd';
+  const dial = !!c.hd, ckd = !!c.ckd && !dial;
+  const cat = !!(c.surg || c.wound || c.burn || c.onc);
+  const rows = [age !== null && age >= 65 ? T.old : T.base];
+  if (icu) rows.push(T.icu);
+  ['surg', 'wound', 'onc', 'cirr', 'burn'].forEach(k => { if (c[k]) rows.push(T[k]); });
+  if (dial) rows.push(icu ? T.hdicu : T.hd);
+  // energy: ICU caps at 25; cirrhosis 35; otherwise the base 30
+  let kRow = rows[0];
+  if (icu) kRow = dial ? T.hdicu : T.icu;
+  else if (c.cirr) kRow = T.cirr;
+  else if (dial) kRow = T.hd;
+  else { const k = ['wound', 'onc', 'surg', 'burn'].find(k => c[k]); if (k) kRow = T[k]; }
+  // protein: highest target among rows; CKD (not on dialysis) caps it
+  let pRow = rows.reduce((a, b) => (b.pro[2] >= a.pro[2] ? b : a), rows[0]);
+  let ckdRow = null;
+  if (ckd) {
+    ckdRow = icu ? T.ckdIcu : cat ? T.ckdCat : opd ? (c.dm ? T.ckdOpdDm : T.ckdOpd) : T.ckdWard;
+    if (pRow.pro[2] > ckdRow.pro[2] && pRow !== rows[0]) out.notes.push(`未透析 CKD：蛋白質壓在 ${ckdRow.pro[0]}–${ckdRow.pro[1]} g/kg（${ckdRow.src}）；${pRow.t}原本建議 ${pRow.pro[2]} g/kg。`);
+    pRow = ckdRow;
+    if (icu) kRow = T.ckdIcu;
+  }
+  const kOv = num(s.kcalKg), pOv = num(s.proKg);
+  out.kcalKg = kOv !== null ? { t: kOv, lo: kOv, hi: kOv, src: '手動設定', row: null } : { t: kRow.kcal[2], lo: kRow.kcal[0], hi: kRow.kcal[1], src: kRow.src, row: kRow.k };
+  out.proKg = pOv !== null ? { t: pOv, lo: pOv, hi: pOv, src: '手動設定', row: null } : { t: pRow.pro[2], lo: pRow.pro[0], hi: pRow.pro[1], src: pRow.src, row: pRow.k };
+  out.kcal = r0(out.kcalKg.t * dw);
+  out.pro = r1(out.proKg.t * dw);
+  out.ckdCap = ckd && pOv === null ? r1(ckdRow.pro[1] * dw) : null;
+  if (icu) out.notes.push(`重症：第 1–3 天熱量 ≤70%（約 ${r0(out.kcal * 0.7)} kcal），第 3 天後 80–100%（ESPEN ICU 2023）。`);
+  if (icu && out.bmi >= 30) out.notes.push('肥胖重症：ESPEN 用校正體重計算；ASPEN 2016 另一做法為實際體重 11–14 kcal/kg、理想體重 2.0–2.5 g/kg 蛋白質。');
+  if (c.cirr && !dry) out.notes.push('肝硬化有腹水時，請在「乾體重」填估計值（輕度 −5%、中度 −10%、重度 −15%）。');
+
+  // fluid
+  const fl = num(s.fluidLim);
+  out.fluidStd = r0(30 * dw);
+  out.fluid = c.fluidR && fl ? Math.min(fl, out.fluidStd) : out.fluidStd;
+  out.fluidLimited = !!(c.fluidR && fl);
+  if (c.fluidR && !fl) out.errs.push('已勾選限水，請填每日液體上限。');
+  if (dial && !out.fluidLimited) out.notes.push('透析：每日液體約為「尿量 + 500–750 mL」，請依透析間體重增加填入液體上限。');
+
+  // gap after current intake
+  const oral = Math.min(100, Math.max(0, num(s.oral) ?? (s.route === 'oral' ? 50 : 0)));
+  out.oralPct = oral;
+  out.gapKcal = r0(out.kcal * (1 - oral / 100));
+  out.gapPro = r1(out.pro * (1 - oral / 100));
+
+  // weight loss, GLIM phenotype, refeeding
+  const uwt = num(s.uwt);
+  out.wl = uwt && wt && uwt > wt ? r1((uwt - wt) / uwt * 100) : uwt ? 0 : null;
+  const bmiR = out.bmiDry ?? out.bmi;
+  const pheno = [];
+  if (out.wl !== null && ((s.uwtSpan !== 'gt6' && out.wl > 5) || (s.uwtSpan === 'gt6' && out.wl > 10))) pheno.push(`體重減輕 ${out.wl}%`);
+  if (bmiR !== null && bmiR < (age !== null && age >= 70 ? 20 : 18.5)) pheno.push(`BMI ${bmiR}`);
+  const etio = [];
+  if (oral <= 50 && s.route === 'oral' && s.lowIntake && s.lowIntake !== 'none') etio.push('進食 ≤50% 超過 1 週');
+  if (icu || c.onc || c.wound || c.surg || c.burn || c.cirr || c.hd || c.ckd) etio.push('急慢性疾病');
+  out.glim = { pheno, etio, met: pheno.length > 0 && etio.length > 0 };
+
+  const wl6 = out.wl !== null && s.uwtSpan && s.uwtSpan !== 'gt6' ? out.wl : null;
+  const major = [], minor = [];
+  if (bmiR !== null && bmiR < 16) major.push('BMI <16'); else if (bmiR !== null && bmiR < 18.5) minor.push('BMI <18.5');
+  if (wl6 !== null && wl6 > 15) major.push('6 個月內體重減輕 >15%'); else if (wl6 !== null && wl6 > 10) minor.push('6 個月內體重減輕 >10%');
+  if (s.lowIntake === '10' || s.lowIntake === '15') major.push('幾乎沒進食 >10 天'); else if (s.lowIntake === '5') minor.push('幾乎沒進食 >5 天');
+  if (s.lowLytes) major.push('餵食前 K/P/Mg 偏低');
+  if (s.drugs) minor.push('酗酒或胰島素／化療／制酸劑／利尿劑');
+  const high = major.length >= 1 || minor.length >= 2;
+  const extreme = (bmiR !== null && bmiR < 14) || s.lowIntake === '15';
+  out.refeed = { high, extreme, major, minor, startKg: high ? (extreme ? 5 : 10) : null };
+  if (high) out.refeed.start = r0(out.refeed.startKg * dw);
+  return out;
+}
+
+/* ---------- product fit for this patient ---------- */
+function ctxOf(s, n) {
+  const c = s.c || {};
+  const tube = s.route !== 'oral';
+  const ckdLow = !!c.ckd && !c.hd && n.proKg && n.proKg.t <= 0.8;
+  const hiK = (num(s.labK) ?? 0) >= 5.5, hiP = (num(s.labP) ?? 0) >= 5.5;
+  return { c, tube, jt: s.route === 'jt', oral: !tube, ckdLow, dial: !!c.hd, hiK, hiP, avail: s.avail || 'any', form: s.form || 'any', fluidLimited: n.fluidLimited };
+}
+// returns { ok:false, why } when the product can't be used, else { pen, notes[] }
+function fit(p, x) {
+  const notes = [];
+  let pen = 0;
+  if (x.avail === 'kitchen' && !p.kitchen) return { ok: false, why: '非管灌膳食供應品項' };
+  if (x.avail === 'selfpay' && !p.selfpay) return { ok: false, why: '沒有自費醫令' };
+  if (x.tube && p.tubeOk === false) return { ok: false, why: '不適合管灌' };
+  if (x.form !== 'any' && BASE.includes(p.cat) && p.form !== x.form) return { ok: false, why: x.form === 'powder' ? '非粉狀' : '非液狀' };
+  if (x.oral && !p.selfpay) { pen += 4; notes.push('只列在管灌膳食，口服需確認供應方式'); }
+  if (x.tube && !p.kitchen) pen += 2;
+  const cat = p.cat;
+  if (x.ckdLow) {
+    if (cat === 'hd' || cat === 'promod') { pen += 30; notes.push('高蛋白，不適合未透析低蛋白飲食'); }
+    else if (cat === 'ckd' || cat === 'calmod') pen -= 6;
+    else if (BASE.includes(cat)) { pen += 10; notes.push('非低蛋白腎病配方'); }
+  }
+  if (x.dial) {
+    if (cat === 'ckd') { pen += 25; notes.push('低蛋白配方，不適合透析'); }
+    else if (cat === 'hd') pen -= 6;
+    else if (BASE.includes(cat)) { pen += 6; notes.push('非透析配方：注意鉀、磷、水分'); }
+  }
+  if (x.c.dm) {
+    if (cat === 'dm') pen -= 5;
+    else if (cat === 'ckd' || cat === 'hd') pen -= 2;
+    else if (cat === 'clear' || p.id === 'sentosa-malto') { pen += 15; notes.push('單純碳水化合物，糖尿病慎用'); }
+    else if (BASE.includes(cat)) { pen += 5; notes.push('非糖尿病配方，注意血糖'); }
+  }
+  if (x.jt || x.c.malab) {
+    if (cat === 'pep') pen -= x.jt ? 8 : 6;
+    else if (BASE.includes(cat)) { pen += x.jt ? 5 : 4; if (x.c.malab) notes.push('非水解配方'); }
+  }
+  if (x.c.onc && cat === 'onc') pen -= 6;
+  if (x.c.wound && BASE.includes(cat) && p.kcal && p.pro / p.kcal * 400 >= 18) pen -= 3; // ≥18% energy from protein
+  if (x.fluidLimited && BASE.includes(cat) && p.kcalMl && p.kcalMl < 1.5) { pen += 6; notes.push('熱量密度 <1.5 kcal/mL'); }
+  if (x.hiK && p.k !== null && p.kcal) { const k100 = p.k / p.kcal * 100; if (k100 > 60) { pen += 10; notes.push(`鉀 ${r0(k100)} mg/100 kcal`); } }
+  if (x.hiP && p.p !== null && p.kcal) { const p100 = p.p / p.kcal * 100; if (p100 > 50) { pen += 8; notes.push(`磷 ${r0(p100)} mg/100 kcal`); } }
+  // disease-specific formulas without their indication: usable, but a standard formula is preferred
+  const has = {
+    pep: x.jt || x.c.malab, onc: x.c.onc, imm: x.c.surg || x.c.onc || x.c.wound || x.c.burn,
+    hd: x.dial, ckd: !!x.c.ckd && !x.dial, dm: x.c.dm, conc: x.fluidLimited || x.oral
+  };
+  const off = { pep: 12, onc: 12, imm: 12, hd: 15, ckd: 20, dm: 8, conc: 6 };
+  if (off[cat] && !has[cat]) { pen += off[cat]; if (off[cat] >= 12) notes.push(`${CAT[cat]}專用配方，此病人無相應適應症`); }
+  if (p.id === 'efi-yuanqi' && !x.dial && !x.hiK) pen += 3;
+  if (p.id === 'efi-energy' && !x.ckdLow) pen += 3;
+  return { ok: true, pen, notes };
+}
+
+/* ---------- totals ---------- */
+const waterFrac = d => Math.max(0.6, Math.min(0.9, 1 - 0.15 * d)); // free-water fraction ≈ 85% at 1 kcal/mL, 70% at 2 kcal/mL
+function totals(items) {
+  const t = { kcal: 0, pro: 0, fat: 0, cho: 0, fib: 0, na: 0, k: 0, p: 0, vol: 0, water: 0, aa: 0, units: 0, unknown: new Set(), waterEst: false, list: [] };
+  items.forEach(it => {
+    const p = byId[it.id], q = num(it.q) || 0;
+    if (!p || q <= 0) return;
+    t.units += q;
+    t.kcal += (p.kcal || 0) * q;
+    if (p.aaNotProtein) t.aa += (p.pro || 0) * q; else t.pro += (p.pro || 0) * q;
+    [['fat', 'fat'], ['cho', 'cho'], ['fib', 'fib'], ['na', 'na'], ['k', 'k'], ['p', 'p']].forEach(([a, b]) => { if (p[b] === null || p[b] === undefined) t.unknown.add(b); else t[a] += p[b] * q; });
+    if (p.ml) {
+      t.vol += p.ml * q;
+      if (p.water !== null && p.water !== undefined) t.water += p.water * q;
+      else if (p.kcalMl) { t.water += p.ml * waterFrac(p.kcalMl) * q; t.waterEst = true; }
+    }
+    t.list.push({ p, q });
+  });
+  ['kcal', 'fat', 'cho', 'fib', 'na', 'k', 'p', 'vol', 'water'].forEach(k => t[k] = r0(t[k]));
+  t.pro = r1(t.pro); t.aa = r1(t.aa);
+  return t;
+}
+
+/* ---------- optimizer ---------- */
+function plans(s, n) {
+  if (!n.ready || n.gapKcal < 50) return { list: [], blocked: [] };
+  const x = ctxOf(s, n);
+  const TK = n.gapKcal, TP = Math.max(n.gapPro, 1);
+  const fits = {}, blocked = [];
+  P.forEach(p => { const f = fit(p, x); if (f.ok) fits[p.id] = f; else blocked.push({ p, why: f.why }); });
+  const bases = P.filter(p => BASE.includes(p.cat) && fits[p.id] && p.kcal > 0);
+  const pmods = P.filter(p => p.cat === 'promod' && fits[p.id] && p.pro > 0);
+  const cmods = P.filter(p => p.cat === 'calmod' && fits[p.id] && p.kcal > 0);
+  const maxB = x.oral ? 3 : 10, maxM = x.oral ? 3 : 4;
+  const capPro = n.ckdCap !== null ? n.ckdCap * (1 - n.oralPct / 100) : null;
+  const fluidBudget = n.fluidLimited ? n.fluid : null;
+  const best = {};
+  const score = (kc, pr, vol, units, mods, pen) => {
+    const kr = kc / TK, pr_ = pr / TP;
+    // protein shortfall costs more than surplus (except CKD-ND, handled by capPro below)
+    let sc = 100 * Math.abs(kr - 1) + (pr_ < 1 ? 120 * (1 - pr_) : x.ckdLow ? 120 * (pr_ - 1) : 12 * Math.min(pr_ - 1, 0.6) + 100 * Math.max(0, pr_ - 1.6));
+    if (kr < 0.9) sc += 60 * (0.9 - kr);
+    if (pr_ < 0.9 && !x.ckdLow) sc += 80 * (0.9 - pr_);
+    if (capPro !== null && pr > capPro) sc += 300 * (pr / capPro - 1);
+    if (kr > 1.1) sc += 40 * (kr - 1.1);
+    sc += (x.oral ? 5 : 1.2) * units + 4 * mods + pen;
+    if (fluidBudget && vol > fluidBudget * 0.85) sc += 0.08 * (vol - fluidBudget * 0.85);
+    return sc;
+  };
+  bases.forEach(b => {
+    const unitStep = b.half ? 0.5 : 1;
+    for (let qb = unitStep; qb <= maxB; qb += unitStep) {
+      const pm = [null, ...pmods], cm = [null, ...cmods];
+      pm.forEach(a => cm.forEach(m => {
+        for (let qa = a ? 1 : 0; qa <= (a ? maxM : 0); qa++) for (let qm = m ? 1 : 0; qm <= (m ? maxM : 0); qm++) {
+          const kc = b.kcal * qb + (a ? a.kcal * qa : 0) + (m ? m.kcal * qm : 0);
+          const pr = b.pro * qb + (a ? a.pro * qa : 0) + (m ? m.pro * qm : 0);
+          const vol = (b.ml || 0) * qb + (a && a.ml ? a.ml * qa : 0) + (m && m.ml ? m.ml * qm : 0);
+          const units = qb + qa + qm, mods = (a ? 1 : 0) + (m ? 1 : 0);
+          const pen = fits[b.id].pen + (a ? fits[a.id].pen : 0) + (m ? fits[m.id].pen : 0);
+          const sc = score(kc, pr, vol, units, mods, pen);
+          if (!best[b.id] || sc < best[b.id].sc) best[b.id] = { sc, items: [{ id: b.id, q: qb }, a && { id: a.id, q: qa }, m && { id: m.id, q: qm }].filter(Boolean) };
         }
+      }));
+    }
+  });
+  const fam = id => id.replace(/^(efi-(?:classic|kang))\d+$/, '$1'); // same formula in different pack sizes
+  const seen = new Set();
+  const list = Object.values(best).sort((a, b) => a.sc - b.sc).filter(pl => { const f = fam(pl.items[0].id); if (seen.has(f)) return false; seen.add(f); return true; }).slice(0, 3).map(pl => {
+    const t = totals(pl.items);
+    const notes = [...new Set(pl.items.flatMap(it => fits[it.id].notes))];
+    return { items: pl.items, t, kr: r0(t.kcal / TK * 100), pr: r0(t.pro / TP * 100), notes, sc: r1(pl.sc), ok: t.kcal >= TK * 0.9 && t.kcal <= TK * 1.1 && t.pro >= TP * 0.9 && (capPro === null ? t.pro <= TP * 1.6 : t.pro <= capPro * 1.05) };
+  });
+  return { list, blocked, TK, TP, x };
+}
 
-        function calculateNutrition() {
-            const primaryKey = document.getElementById('primary-product').value;
-            const primaryQty = parseInt(document.getElementById('primary-qty').value) || 0;
+/* ---------- add-ons (not part of the optimizer) ---------- */
+function extras(s, n) {
+  const c = s.c || {}, out = [];
+  const x = ctxOf(s, n);
+  const avail = p => p && fit(p, x).ok;
+  const pick = cat => P.filter(p => p.cat === cat && avail(p));
+  if (c.wound) { const w = pick('wound'); if (w.length) out.push({ t: '傷口癒合補充', items: w, x: '壓傷第 2 期以上合併營養不良或風險：在熱量、蛋白質達標的前提下，加上含精胺酸、鋅、抗氧化物的配方（NPIAP/EPUAP 2019）。依廠商建議每日份數加在處方中。' }); }
+  if (c.burn) { const g = pick('gln'); if (g.length) out.push({ t: '麩醯胺酸', items: g, x: `燒傷 >20% TBSA：0.3–0.5 g/kg/日（約 ${n.dw ? r0(0.3 * n.dw) + '–' + r0(0.5 * n.dw) : '—'} g），10–15 天；重大創傷：0.2–0.3 g/kg/日，前 5 天。其他重症不建議（ESPEN ICU 2023）。` }); }
+  if (c.press) { const f = pick('fib'); if (f.length) out.push({ t: '膳食纖維', items: f, x: '管灌腹瀉或便秘可加可溶性纖維；腸缺血、腸阻塞或重症血流動力學不穩時避免。' }); }
+  if (c.dysph && x.oral) { const f = pick('food'); if (f.length) out.push({ t: '質地調整介護食', items: f, x: '經口吞嚥困難時可搭配；質地需經語言治療師評估。' }); }
+  if (c.surg) { const f = pick('clear'); if (f.length) out.push({ t: '術前碳水化合物負荷（ERAS）', items: f, x: '術前一晚與術前 2 小時給清流碳水飲品（ESPEN 手術 2021）；糖尿病與胃排空延遲者依院內 ERAS 規範。不列入每日處方計算。' }); }
+  return out;
+}
 
-            const protKey = document.getElementById('protein-module').value;
-            const protQty = parseInt(document.getElementById('protein-module-qty').value) || 0;
+/* ---------- evaluate one prescription ---------- */
+function review(s, n, rx) {
+  const t = totals(rx), A = [];
+  if (!n.ready || !t.list.length) return { t, A, kr: null, pr: null };
+  const x = ctxOf(s, n);
+  const TK = n.gapKcal || 1, TP = n.gapPro || 1;
+  const kr = r0(t.kcal / TK * 100), pr = r0(t.pro / TP * 100);
+  const lbl = n.oralPct ? `（扣除目前飲食 ${n.oralPct}% 後的缺口）` : '';
+  if (kr < 70) A.push({ c: 'stop', t: `熱量只達 ${kr}%${lbl}`, x: `還差約 ${TK - t.kcal} kcal。` });
+  else if (kr < 90) A.push({ c: 'warn', t: `熱量 ${kr}%，未達 90%${lbl}`, x: `還差約 ${TK - t.kcal} kcal。` });
+  else if (kr > 120) A.push({ c: 'stop', t: `熱量 ${kr}%，超過目標 20% 以上`, x: '過度餵食會增加高血糖、肝功能異常與 CO₂ 產生。' });
+  else if (kr > 110) A.push({ c: 'warn', t: `熱量 ${kr}%，略高於目標` });
+  const cap = n.ckdCap !== null ? n.ckdCap * (1 - n.oralPct / 100) : null;
+  if (cap !== null && t.pro > cap * 1.05) A.push({ c: 'stop', t: `蛋白質 ${t.pro} g，超過未透析 CKD 上限（約 ${r1(cap)} g）`, x: '改用低蛋白腎病配方，熱量不足以易能充等熱量模組補。' });
+  else if (pr < 80) A.push({ c: x.ckdLow ? 'warn' : 'stop', t: `蛋白質只達 ${pr}%${lbl}`, x: x.dial ? '透析病人可加低電解質蛋白質模組。' : '可加蛋白質模組或改高蛋白配方。' });
+  else if (pr < 90) A.push({ c: 'warn', t: `蛋白質 ${pr}%，未達 90%` });
+  if (n.fluidLimited && t.vol > n.fluid) A.push({ c: 'stop', t: `營養品容量 ${t.vol} mL 已超過液體上限 ${n.fluid} mL`, x: '改用 1.5–2.0 kcal/mL 濃縮配方。' });
+  else if (n.fluidLimited && t.vol > n.fluid * 0.85) A.push({ c: 'warn', t: `營養品容量 ${t.vol} mL 接近液體上限 ${n.fluid} mL`, x: '藥物沖管與點滴也算在液體內。' });
+  t.list.forEach(({ p }) => {
+    const f = fit(p, x);
+    if (!f.ok) A.push({ c: 'warn', t: `${p.name}：${f.why}` });
+    else if (f.notes.length) A.push({ c: 'warn', t: `${p.name}`, x: f.notes.join('；') });
+    if (p.aaNotProtein) A.push({ c: 'info', t: `${p.name} 的含氮成分為游離胺基酸（精胺酸、麩醯胺酸等）`, x: '另列為「胺基酸」，不計入蛋白質達成率。' });
+  });
+  if (x.oral && t.list.some(({ p }) => BASE.includes(p.cat)) && (t.kcal < 400 || t.pro < 30)) A.push({ c: 'info', t: '口服營養補充每日建議至少 400 kcal、30 g 蛋白質', x: 'ESPEN 多重疾病住院 2018；少於此量效果有限。' });
+  if (x.oral && t.units > 4) A.push({ c: 'warn', t: `口服共 ${t.units} 份，順從性可能不佳`, x: '可改濃縮配方，或評估是否需要管灌。' });
+  if (x.oral) {
+    const total = n.kcal * n.oralPct / 100 + t.kcal;
+    if (total < n.kcal * 0.5) A.push({ c: 'stop', t: '經口加營養品仍 <50% 需求', x: '預期持續超過 7 天時應考慮管灌（ESPEN 手術 2021）。' });
+  }
+  if (x.hiK) A.push({ c: 'info', t: `營養品每日鉀 ${t.k} mg`, x: '血鉀 ≥5.5：優先低鉀配方，並檢查藥物（ACEI/ARB、MRA、KCl）與飲食來源。' });
+  if (x.hiP) A.push({ c: 'info', t: `營養品每日磷 ${t.p} mg`, x: '血磷偏高：優先低磷腎病配方，隨餐使用磷結合劑。' });
+  if (t.unknown.size) A.push({ c: 'info', t: '部分品項缺少營養素資料', x: `查不到：${[...t.unknown].map(k => ({ fat: '脂肪', cho: '醣類', fib: '纖維', na: '鈉', k: '鉀', p: '磷' }[k])).join('、')}，合計值會偏低。` });
+  return { t, A, kr, pr };
+}
 
-            const calKey = document.getElementById('calorie-module').value;
-            const calQty = parseInt(document.getElementById('calorie-module-qty').value) || 0;
+/* ---------- feeding schedule ---------- */
+function schedule(s, n, t) {
+  if (!n.ready || !t.vol || s.route === 'oral') return null;
+  const feeds = Math.max(1, Math.min(8, num(s.feeds) || 6));
+  const free = Math.max(0, n.fluid - t.water);
+  if (s.route === 'jt') {
+    return { mode: 'cont', rate: r0(t.vol / 20), hours: 20, flush: r0(free / 6), free, start: '起始 10–20 mL/h，耐受後每 8–12 小時增加 10–20 mL/h 至目標。' };
+  }
+  return { mode: 'bolus', feeds, per: r0(t.vol / feeds), flush: r0(free / feeds), free, start: '起始每餐 100–150 mL，耐受後逐餐增加；每次灌食前後以溫開水 30 mL 以上沖管。' };
+}
 
-            const primaryItem = productsDB[primaryKey] || { name: '', calories: 0, protein: 0 };
-            const protModule = proteinModulesDB[protKey] || { calories: 0, protein: 0 };
-            const calModule = calorieModulesDB[calKey] || { calories: 0, protein: 0 };
+/* ---------- order text ---------- */
+const ROUTE = { oral: '經口', ng: '鼻胃管', peg: '胃造口', jt: '空腸管' };
+function orderText(s, n, rx, sch, date) {
+  const t = totals(rx);
+  const L = [];
+  L.push(`營養處方${date ? '（' + date + '）' : ''}`);
+  if (n.ready) {
+    L.push(`需求：熱量 ${n.kcal} kcal（${n.kcalKg.t} kcal/kg × ${n.dw} kg ${n.basisLabel}），蛋白質 ${n.pro} g（${n.proKg.t} g/kg），水分 ${n.fluid} mL${n.fluidLimited ? '（限水）' : ''}`);
+    if (n.oralPct) L.push(`目前飲食約 ${n.oralPct}%，營養品補足：熱量 ${n.gapKcal} kcal、蛋白質 ${n.gapPro} g`);
+  }
+  L.push(`途徑：${ROUTE[s.route] || '—'}`);
+  if (!t.list.length) { L.push('（尚未開立品項）'); return L.join('\n'); }
+  t.list.forEach(({ p, q }, i) => L.push(`${i + 1}. ${p.code ? p.code + ' ' : ''}${p.brand} ${p.name}（${p.serving}）× ${q} ${p.unit}/日${p.code ? '' : '〔管灌膳食〕'}`));
+  L.push(`合計：熱量 ${t.kcal} kcal${n.ready ? `（${r0(t.kcal / (n.gapKcal || 1) * 100)}%）` : ''}，蛋白質 ${t.pro} g${n.ready ? `（${r0(t.pro / (n.gapPro || 1) * 100)}%）` : ''}${t.aa ? `，另胺基酸 ${t.aa} g` : ''}；容量 ${t.vol} mL`);
+  L.push(`　　　鈉 ${t.na} mg、鉀 ${t.k} mg、磷 ${t.p} mg${t.unknown.size ? '（部分品項缺資料）' : ''}`);
+  if (sch) {
+    if (sch.mode === 'bolus') L.push(`灌食：每日 ${sch.feeds} 餐，每餐約 ${sch.per} mL；每餐另給水約 ${sch.flush} mL（含沖管）`);
+    else L.push(`灌食：連續灌食約 ${sch.rate} mL/h × ${sch.hours} 小時；每 4 小時沖水約 ${sch.flush} mL`);
+  }
+  if (n.refeed && n.refeed.high) L.push(`再餵食高風險：起始 ${n.refeed.start} kcal/日（${n.refeed.startKg} kcal/kg），4–7 天內漸進；餵食前給 thiamine，監測 K、P、Mg`);
+  return L.join('\n');
+}
 
-            // Total Calculations
-            const totalCal = (primaryItem.calories * primaryQty) + (protModule.calories * protQty) + (calModule.calories * calQty);
-            const totalPro = Math.round(((primaryItem.protein * primaryQty) + (protModule.protein * protQty) + (calModule.protein * calQty)) * 10) / 10;
+function evaluate(s) {
+  const n = needs(s);
+  const pl = plans(s, n);
+  const rv = review(s, n, s.rx || []);
+  return { n, pl, rv, sch: schedule(s, n, rv.t), ex: n.ready ? extras(s, n) : [] };
+}
 
-            const targetTee = parseFloat(document.getElementById('target-tee-text').innerText) || 1800;
-            const targetPro = parseFloat(document.getElementById('target-pro-text').innerText) || 60;
+const api = { CAT, BASE, P, byId, TAB, needs, fit, ctxOf, totals, plans, extras, review, schedule, orderText, evaluate, ibwOf };
+if (typeof module !== 'undefined') module.exports = api;
+return api;
+})();
+/*ENGINE-END*/
 
-            const calRate = Math.round((totalCal / targetTee) * 100);
-            const proRate = Math.round((totalPro / targetPro) * 100);
+/* ===================== UI ===================== */
+const $ = id => document.getElementById(id);
+const esc = x => String(x ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const LS = 'bg-ons-rx-v2';
+const blank = () => ({ sex: '', setting: 'ward', route: 'ng', feeds: 6, wBasis: 'auto', ibwM: 'tw', avail: 'any', form: 'any', c: {}, rx: [] });
+let S = (() => { try { const x = JSON.parse(localStorage.getItem(LS)); if (x && typeof x === 'object') return Object.assign(blank(), x); } catch (e) {} return blank(); })();
+const save = () => { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} };
+let R = null;
+const fmt = v => v === null || v === undefined ? '—' : v;
+const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+function alertHTML(i) { return `<div class="alert ${i.c}"><strong>${esc(i.t)}</strong>${i.x ? `<span class="small">${esc(i.x)}</span>` : ''}</div>`; }
+const pname = p => `${p.brand} ${p.name}`;
 
-            // Display Title
-            let titleText = `${primaryItem.name} x ${primaryQty} 份/日`;
-            let isCombined = false;
+function syncInputs() {
+  document.querySelectorAll('[data-s]').forEach(el => {
+    const v = S[el.dataset.s];
+    if (el.type === 'checkbox') el.checked = !!v;
+    else if (document.activeElement !== el) el.value = v === undefined || v === null ? '' : v;
+  });
+  document.querySelectorAll('[data-c]').forEach(el => { el.checked = !!S.c[el.dataset.c]; });
+  document.querySelectorAll('[data-show="tube"]').forEach(el => el.hidden = S.route === 'oral');
+  document.querySelectorAll('[data-show="fluid"]').forEach(el => el.hidden = !S.c.fluidR);
+  const o = document.querySelector('[data-s="oral"]');
+  if (o && document.activeElement !== o && (S.oral === undefined || S.oral === '')) o.placeholder = S.route === 'oral' ? '50' : '0';
+}
 
-            if (protKey !== 'none' && protQty > 0) {
-                titleText += ` ＋ ${protModule.name} x ${protQty}`;
-                isCombined = true;
-            }
-            if (calKey !== 'none' && calQty > 0) {
-                titleText += ` ＋ ${calModule.name} x ${calQty}`;
-                isCombined = true;
-            }
+function renderStatus() {
+  const n = R.n, rv = R.rv;
+  const lv = !n.ready ? ['none', '輸入身高、體重、性別'] : !rv.t.list.length ? ['none', '尚未開立'] : rv.A.some(a => a.c === 'stop') ? ['stop', '需調整'] : rv.A.some(a => a.c === 'warn') ? ['warn', '可再調整'] : ['go', '達標'];
+  $('status').innerHTML = `<div class="k"><span>熱量目標</span><b>${n.ready ? n.gapKcal : '—'}<small>kcal</small></b></div>
+    <div class="k"><span>蛋白質目標</span><b>${n.ready ? n.gapPro : '—'}<small>g</small></b></div>
+    <div class="k"><span>處方達成</span><b>${rv.kr ?? '—'}<small>%</small> / ${rv.pr ?? '—'}<small>%</small></b></div>
+    <div class="grow"><span class="lvl ${lv[0]}">${esc(lv[1])}</span></div>
+    <div class="acts"><button class="btn sm primary" type="button" id="copyTop">複製醫令</button><button class="btn sm" type="button" id="printBtn">列印</button><button class="btn sm" type="button" id="resetAll">清除</button></div>`;
+}
 
-            document.getElementById('selected-product-title').innerText = titleText;
-            document.getElementById('formula-mode-badge').innerText = isCombined ? '跨品牌模組組合模式' : '標準單一模式';
+function renderTargets() {
+  const n = R.n;
+  if (!n.ready) {
+    $('basisTag').textContent = '';
+    $('targets').innerHTML = (n.errs.length ? n.errs.map(e => alertHTML({ c: 'warn', t: e })).join('') : '') + '<p class="small muted">輸入性別、身高、體重後計算。</p>';
+    return;
+  }
+  $('basisTag').textContent = `${n.basisLabel} ${n.dw} kg`;
+  const gap = n.oralPct ? `<p class="small" style="margin-top:8px">目前飲食約達 <b>${n.oralPct}%</b> → 營養品需補 <b class="mono">${n.gapKcal} kcal</b>、<b class="mono">${n.gapPro} g</b> 蛋白質。</p>` : '';
+  $('targets').innerHTML = `<div class="tg">
+      <div class="m"><span class="k">熱量</span><span class="v">${n.kcal}<small>kcal</small></span><span class="x">${n.kcalKg.t} kcal/kg（${n.kcalKg.lo}–${n.kcalKg.hi}）</span></div>
+      <div class="m"><span class="k">蛋白質</span><span class="v">${n.pro}<small>g</small></span><span class="x">${n.proKg.t} g/kg（${n.proKg.lo}–${n.proKg.hi}）</span></div>
+      <div class="m"><span class="k">水分</span><span class="v">${n.fluid}<small>mL</small></span><span class="x">${n.fluidLimited ? '限水上限' : '30 mL/kg'}</span></div>
+      <div class="m"><span class="k">BMI／理想體重</span><span class="v">${fmt(n.bmi)}</span><span class="x">理想 ${n.ibw} kg${n.wl ? `；減輕 ${n.wl}%` : ''}</span></div>
+    </div>
+    <div class="why">${[...n.why, `熱量：${n.kcalKg.src}`, `蛋白質：${n.proKg.src}`].map(w => `<span>${esc(w)}</span>`).join('')}</div>${gap}`;
+}
 
-            document.getElementById('total-calories-supplied').innerText = `${totalCal} kcal`;
-            document.getElementById('calorie-rate-text').innerText = `達成率: ${calRate}%`;
+function renderFlags() {
+  const n = R.n, F = [];
+  n.errs.forEach(e => F.push({ c: 'warn', t: e }));
+  if (n.ready) {
+    if (n.refeed.high) F.push({ c: 'stop', t: `再餵食症候群高風險${n.refeed.extreme ? '（極高）' : ''}`, x: `${[...n.refeed.major, ...n.refeed.minor].join('、')}。起始 ${n.refeed.start} kcal/日（${n.refeed.startKg} kcal/kg），4–7 天內加到目標；餵食前給 thiamine 200–300 mg/日與綜合維生素 10 天，前 3 天每天驗 K、P、Mg（NICE CG32）。` });
+    else if (n.refeed.minor.length) F.push({ c: 'info', t: '再餵食風險因子 1 項', x: `${n.refeed.minor.join('、')}。未達高風險，起始仍宜保守並追蹤電解質。` });
+    if (n.glim.met) F.push({ c: 'warn', t: '符合 GLIM 營養不良診斷', x: `表現型：${n.glim.pheno.join('、')}；病因：${n.glim.etio.join('、')}。嚴重度請加上肌肉量評估。` });
+    else if (n.glim.pheno.length) F.push({ c: 'info', t: `營養不良表現型：${n.glim.pheno.join('、')}`, x: '再確認病因條件（進食減少或發炎疾病）。' });
+    n.notes.forEach(x => F.push({ c: 'info', t: x }));
+  }
+  $('flagCard').hidden = !F.length;
+  $('flags').innerHTML = F.map(alertHTML).join('');
+}
 
-            document.getElementById('total-protein-supplied').innerText = `${totalPro} g`;
-            document.getElementById('protein-rate-text').innerText = `達成率: ${proRate}%`;
+function itemLine(it) { const p = ONS.byId[it.id]; return `<li>${p.code ? `<span class="mono small">${p.code}</span> ` : ''}${esc(pname(p))} <b class="mono">× ${it.q}</b> ${esc(p.unit)}<span class="small muted">（${esc(p.serving)}）</span></li>`; }
 
-            // Dynamic Alerts
-            const disease = document.getElementById('disease-type').value;
-            const alertBox = document.getElementById('alerts-container');
-            alertBox.innerHTML = '';
+function renderPlans() {
+  const n = R.n, pl = R.pl;
+  if (!n.ready) { $('planTag').textContent = ''; $('planIntro').textContent = ''; $('plans').innerHTML = '<p class="small muted">完成病人資料後顯示。</p>'; $('extras').innerHTML = ''; return; }
+  if (n.gapKcal < 50) { $('planTag').textContent = ''; $('planIntro').textContent = ''; $('plans').innerHTML = alertHTML({ c: 'go', t: '目前飲食已接近需求', x: '不需要營養品；持續監測進食量與體重。' }); $('extras').innerHTML = ''; return; }
+  $('planTag').textContent = pl.list.length ? `${pl.list.length} 個` : '無';
+  $('planIntro').textContent = `目標：營養品提供 ${n.gapKcal} kcal、蛋白質 ${n.gapPro} g${R.n.fluidLimited ? `，容量 <${n.fluid} mL` : ''}。${S.route === 'oral' ? '口服每日最多排 3 份主品項。' : ''}`;
+  $('plans').innerHTML = pl.list.length ? pl.list.map((p, i) => `<div class="plan ${i === 0 ? 'best' : ''}">
+      <div class="ph"><b>方案 ${'ABC'[i]}${i === 0 ? ' <span class="pill go">最適合</span>' : ''}${p.ok ? '' : ' <span class="pill warn">未完全達標</span>'}</b><button class="btn sm ${i === 0 ? 'primary' : ''}" type="button" data-adopt="${i}">採用</button></div>
+      <ul>${p.items.map(itemLine).join('')}</ul>
+      <div class="fig"><span>熱量 <span class="mono">${p.t.kcal}</span> kcal（${p.kr}%）</span><span>蛋白質 <span class="mono">${p.t.pro}</span> g（${p.pr}%）</span><span>容量 <span class="mono">${p.t.vol}</span> mL</span><span>K <span class="mono">${p.t.k}</span>／P <span class="mono">${p.t.p}</span> mg</span></div>
+      ${p.notes.length ? `<div class="pn">注意：${esc(p.notes.join('；'))}</div>` : ''}
+    </div>`).join('') : alertHTML({ c: 'warn', t: '沒有符合條件的品項', x: '放寬「品項來源」或「劑型」限制。' });
+  $('extras').innerHTML = R.ex.map(e => `<details class="more" open><summary><b>${esc(e.t)}</b></summary><p class="small muted" style="margin:4px 0">${esc(e.x)}</p><ul class="plain">${e.items.map(p => `<li>${p.code ? `<span class="mono small">${p.code}</span> ` : ''}${esc(pname(p))}（${esc(p.serving)}；${fmt(p.kcal)} kcal${p.pro ? `、${p.aaNotProtein ? '胺基酸' : '蛋白質'} ${p.pro} g` : ''}）${p.dose ? `<span class="small muted">　${esc(p.dose)}</span>` : ''} <button class="btn sm noprint" type="button" data-add="${p.id}">加入處方</button></li>`).join('')}</ul></details>`).join('');
+}
 
-            if (disease === 'ckd_ndd' && totalPro > (targetPro * 1.15)) {
-                alertBox.innerHTML += `
-                    <div class="alert-box alert-red">
-                        <i class="fa-solid fa-triangle-exclamation" style="margin-top:2px;"></i>
-                        <div><b>CKD未洗腎警戒：</b>當前蛋白質供應量 (${totalPro}g) 已超出低蛋白建議目標 (${targetPro}g)！建議改用低蛋白熱量模組（如易能充）補充熱量，避免增加腎臟負擔。</div>
-                    </div>`;
-            } else if (disease === 'ckd_hd' && proRate < 85) {
-                alertBox.innerHTML += `
-                    <div class="alert-box alert-amber">
-                        <i class="fa-solid fa-circle-exclamation" style="margin-top:2px;"></i>
-                        <div><b>透析高蛋白提示：</b>透析個案蛋白質達成率目前僅 ${proRate}%，可搭配高蛋白低鉀模組（如元氣強，每包蛋白質 8.5g、鉀僅 40.8mg）進行營養強化。</div>
-                    </div>`;
-            } else {
-                alertBox.innerHTML += `
-                    <div class="alert-box alert-green">
-                        <i class="fa-solid fa-circle-check" style="margin-top:2px;"></i>
-                        <div><b>臨床符合：</b>當前配方熱量達成率 ${calRate}%，蛋白質達成率 ${proRate}%，整體配方組成符合個案需求。</div>
-                    </div>`;
-            }
-        }
+function prodOptions(sel) {
+  const groups = {};
+  ONS.P.forEach(p => (groups[p.cat] = groups[p.cat] || []).push(p));
+  return `<option value="">選擇品項</option>` + Object.keys(ONS.CAT).filter(k => groups[k]).map(k => `<optgroup label="${esc(ONS.CAT[k])}">${groups[k].map(p => `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${esc(pname(p))}${p.code ? ' ' + p.code : ''}</option>`).join('')}</optgroup>`).join('');
+}
+function renderRx() {
+  const rows = S.rx || [];
+  $('rxRows').innerHTML = rows.length ? rows.map((it, i) => {
+    const p = ONS.byId[it.id], q = Number(it.q) || 0;
+    return `<tr><td><select data-rxi="${i}" data-rxf="id" aria-label="品項">${prodOptions(it.id)}</select>${p ? `<div class="small muted">${esc(p.serving)}</div>` : ''}</td>
+      <td><span class="inl"><input type="number" step="${p && p.half ? 0.5 : 1}" min="0" max="20" inputmode="decimal" data-rxi="${i}" data-rxf="q" value="${esc(it.q)}" aria-label="數量"><span class="u">${p ? esc(p.unit) : ''}</span></span></td>
+      <td class="num mono">${p ? Math.round((p.kcal || 0) * q) : '—'}</td><td class="num mono">${p ? Math.round((p.pro || 0) * q * 10) / 10 : '—'}</td>
+      <td><button class="btn sm noprint" type="button" data-rxdel="${i}" aria-label="刪除">刪除</button></td></tr>`;
+  }).join('') : '<tr><td colspan="5" class="small muted">採用上方方案，或按「加一項」自行開立。</td></tr>';
+}
+function bar(label, val, tgt, unit, cls, cap) {
+  const w = tgt ? Math.min(100, val / (tgt * 1.3) * 100) : 0, tpos = 100 / 1.3;
+  return `<div class="bar"><div class="bl"><span>${esc(label)}</span><b>${val} / ${tgt} ${unit}（${pct(val, tgt)}%）</b></div><div class="tr"><i class="${cls}" style="width:${w}%"></i><span class="t" style="left:${tpos}%"></span>${cap ? `<span class="t" style="left:${Math.min(100, cap / (tgt * 1.3) * 100)}%;background:var(--stop)"></span>` : ''}</div></div>`;
+}
+function renderRxOut() {
+  const n = R.n, rv = R.rv, t = rv.t;
+  $('rxTag').textContent = t.list.length ? `${t.list.length} 項` : '空白';
+  const cls = r => r === null ? '' : r < 80 || r > 120 ? 'stop' : r < 90 || r > 110 ? 'warn' : 'go';
+  if (n.ready && t.list.length) {
+    const cap = n.ckdCap !== null ? Math.round(n.ckdCap * (1 - n.oralPct / 100) * 10) / 10 : null;
+    $('rxBars').innerHTML = bar('熱量', t.kcal, n.gapKcal, 'kcal', cls(rv.kr)) + bar('蛋白質', t.pro, n.gapPro, 'g', cap && t.pro > cap * 1.05 ? 'stop' : cls(rv.pr), cap) + (n.fluidLimited ? bar('容量（限水）', t.vol, n.fluid, 'mL', t.vol > n.fluid ? 'stop' : t.vol > n.fluid * 0.85 ? 'warn' : 'go') : '');
+  } else $('rxBars').innerHTML = '';
+  $('rxMini').innerHTML = t.list.length ? [['容量', t.vol + ' mL'], ['游離水' + (t.waterEst ? '（估）' : ''), t.water + ' mL'], ['醣類', t.cho + ' g'], ['纖維', t.fib + ' g'], ['鈉', t.na + ' mg'], ['鉀', t.k + ' mg'], ['磷', t.p + ' mg']].concat(t.aa ? [['胺基酸', t.aa + ' g']] : []).map(([k, v]) => `<span class="m">${k}<b>${v}</b></span>`).join('') : '';
+  $('rxAlerts').innerHTML = rv.A.map(alertHTML).join('');
+  const sch = R.sch;
+  let h = '';
+  if (sch) {
+    h += `<div class="sub-h">灌食安排</div><div class="sched">`;
+    if (sch.mode === 'bolus') h += `<div>每日 <b>${sch.feeds}</b> 餐，每餐約 <b class="mono">${sch.per} mL</b> 營養品＋<b class="mono">${sch.flush} mL</b> 水（含沖管）</div>`;
+    else h += `<div>連續灌食約 <b class="mono">${sch.rate} mL/h</b> × ${sch.hours} 小時；每 4 小時沖水約 <b class="mono">${sch.flush} mL</b></div>`;
+    h += `<div class="small muted">每日需水 ${n.fluid} mL − 配方游離水 ${t.water} mL${t.waterEst ? '（依熱量密度估計）' : ''} ＝ 另給 ${sch.free} mL；靜脈輸液與藥物沖管也要算進去。${esc(sch.start)}</div>${sch.mode === 'bolus' && sch.flush < 30 ? `<div class="small" style="color:var(--warn)">每餐沖管至少 30 mL，實際給水會多於估算需求，請一併確認液體平衡${n.fluidLimited ? '與限水量' : ''}。</div>` : ''}</div>`;
+  }
+  if (n.ready && n.refeed.high && t.list.length) {
+    const f = Math.min(1, n.refeed.start / (t.kcal || 1));
+    h += `<div class="sub-h">再餵食高風險：起始量</div><div class="sched"><div>第 1 天約 <b class="mono">${n.refeed.start} kcal</b>（本處方的 ${Math.round(f * 100)}%），之後每 1–2 天增加約 1/3，4–7 天內達到上面的處方量。</div></div>`;
+  } else if (n.ready && S.setting === 'icu' && t.list.length) {
+    h += `<div class="sub-h">重症漸進</div><div class="sched"><div>第 1–3 天 ≤70%（約 <b class="mono">${Math.round(t.kcal * 0.7)} kcal</b>），第 3 天後加到處方量（ESPEN ICU 2023）。</div></div>`;
+  }
+  $('rxSched').innerHTML = h;
+  $('order').textContent = ONS.orderText(S, n, S.rx || [], sch, today());
+}
 
-        function loadSample(sampleId) {
-            if (sampleId === 1) {
-                // 一般管灌個案
-                document.getElementById('disease-type').value = 'normal';
-                document.getElementById('primary-product').value = '2814162';
-                document.getElementById('primary-qty').value = '6';
-                document.getElementById('protein-module').value = 'none';
-                document.getElementById('protein-module-qty').value = '0';
-                document.getElementById('calorie-module').value = 'none';
-                document.getElementById('calorie-module-qty').value = '0';
-            } else if (sampleId === 2) {
-                // 透析/低白蛋白 (元氣強)
-                document.getElementById('disease-type').value = 'ckd_hd';
-                document.getElementById('primary-product').value = '2814013'; // 普寧勝
-                document.getElementById('primary-qty').value = '1';
-                document.getElementById('protein-module').value = '2814134'; // 元氣強
-                document.getElementById('protein-module-qty').value = '1';
-                document.getElementById('calorie-module').value = 'none';
-                document.getElementById('calorie-module-qty').value = '0';
-            } else if (sampleId === 3) {
-                // CKD未透析低蛋白 (易能充)
-                document.getElementById('disease-type').value = 'ckd_ndd';
-                document.getElementById('primary-product').value = '2814012'; // 腎補納
-                document.getElementById('primary-qty').value = '1';
-                document.getElementById('protein-module').value = 'none';
-                document.getElementById('protein-module-qty').value = '0';
-                document.getElementById('calorie-module').value = '2814107'; // 易能充
-                document.getElementById('calorie-module-qty').value = '1';
-            }
-            calculateTargets();
-        }
+function renderAll() {
+  const f = focusMark();
+  R = ONS.evaluate(S);
+  syncInputs(); renderStatus(); renderTargets(); renderFlags(); renderPlans(); renderRx(); renderRxOut(); renderBasis();
+  save();
+  focusRestore(f);
+}
+function focusMark() {
+  const a = document.activeElement;
+  if (!a || !a.dataset || a.dataset.rxi === undefined) return null;
+  return { i: a.dataset.rxi, f: a.dataset.rxf };
+}
+function focusRestore(m) {
+  if (!m) return;
+  const el = document.querySelector(`[data-rxi="${m.i}"][data-rxf="${m.f}"]`);
+  if (el && el !== document.activeElement) el.focus({ preventScroll: true });
+}
 
-        function resetForm() {
-            document.getElementById('age').value = 65;
-            document.getElementById('height').value = 165;
-            document.getElementById('weight').value = 60;
-            document.getElementById('disease-type').value = 'normal';
-            document.getElementById('primary-product').value = '2814162';
-            document.getElementById('primary-qty').value = '6';
-            document.getElementById('protein-module').value = 'none';
-            document.getElementById('protein-module-qty').value = '0';
-            document.getElementById('calorie-module').value = 'none';
-            document.getElementById('calorie-module-qty').value = '0';
-            calculateTargets();
-        }
+/* ---------- input handling ---------- */
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.s !== undefined) {
+    const k = el.dataset.s;
+    S[k] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? (el.value === '' ? '' : Number(el.value)) : el.value;
+    setTimeout(renderAll, 0); return;
+  }
+  if (el.dataset.c !== undefined) {
+    S.c[el.dataset.c] = el.checked;
+    if (el.dataset.c === 'hd' && el.checked) S.c.ckd = false;
+    if (el.dataset.c === 'ckd' && el.checked) S.c.hd = false;
+    setTimeout(renderAll, 0); return;
+  }
+  if (el.dataset.rxi !== undefined) {
+    const it = S.rx[+el.dataset.rxi];
+    if (el.dataset.rxf === 'id') { it.id = el.value; if (!it.q) it.q = 1; }
+    else it.q = el.value === '' ? 0 : Number(el.value);
+    setTimeout(renderAll, 0);
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('input[type=number]')) { e.preventDefault(); e.target.blur(); }
+});
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-adopt]');
+  if (a) { const p = R.pl.list[+a.dataset.adopt]; S.rx = p.items.map(x => ({ ...x })); renderAll(); $('rxCard').scrollIntoView({ block: 'start', behavior: 'smooth' }); $('rxCard').classList.add('flash'); setTimeout(() => $('rxCard').classList.remove('flash'), 1300); toast(`已採用方案 ${'ABC'[+a.dataset.adopt]}，可再逐項調整`); return; }
+  const ad = e.target.closest('[data-add]');
+  if (ad) { const p = ONS.byId[ad.dataset.add]; S.rx = S.rx || []; const ex = S.rx.find(x => x.id === p.id); if (ex) ex.q = (Number(ex.q) || 0) + 1; else S.rx.push({ id: p.id, q: p.defQ || 1 }); renderAll(); toast('已加入處方：' + pname(p)); return; }
+  const d = e.target.closest('[data-rxdel]');
+  if (d) { S.rx.splice(+d.dataset.rxdel, 1); renderAll(); return; }
+  if (e.target.id === 'rxAdd') { S.rx = S.rx || []; S.rx.push({ id: '', q: 1 }); renderAll(); const s = document.querySelector(`[data-rxi="${S.rx.length - 1}"][data-rxf="id"]`); if (s) s.focus(); return; }
+  if (e.target.id === 'rxClear') { if (!S.rx.length || confirm('清空本次處方？')) { S.rx = []; renderAll(); } return; }
+  if (e.target.id === 'copyOrder' || e.target.id === 'copyTop') { copyText($('order').textContent); return; }
+  if (e.target.id === 'printBtn') { window.print(); return; }
+  if (e.target.id === 'resetAll') { if (confirm('清除所有輸入？')) { S = blank(); renderAll(); toast('已清除'); } return; }
+  const c = e.target.closest('[data-case]'); if (c) { loadCase(+c.dataset.case); return; }
+  const ch = e.target.closest('[data-chip]'); if (ch) { catFilter = ch.dataset.chip; renderCatalog(); return; }
+});
+function copyText(t) {
+  const done = () => toast('已複製，可貼到醫令或病歷');
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
+  function fallback() { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('無法複製'); } ta.remove(); }
+}
+let tt; function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 1800); }
 
-        // Initialize on load
-        calculateTargets();
-    </script>
+/* ---------- catalog ---------- */
+let catFilter = 'all';
+function renderCatalog() {
+  const cats = Object.keys(ONS.CAT).filter(k => ONS.P.some(p => p.cat === k));
+  $('catChips').innerHTML = [['all', '全部'], ...cats.map(k => [k, ONS.CAT[k]])].map(([k, l]) => `<button class="chip" type="button" data-chip="${k}" aria-pressed="${catFilter === k}">${esc(l)}</button>`).join('');
+  const q = ($('catQ').value || '').trim().toLowerCase();
+  const rows = ONS.P.filter(p => (catFilter === 'all' || p.cat === catFilter) && (!q || `${p.brand}${p.name}${p.code || ''}`.toLowerCase().includes(q)));
+  $('catCount').textContent = `${ONS.P.length} 項`;
+  const confL = { high: '高', medium: '中', low: '低' };
+  $('catRows').innerHTML = rows.map(p => `<tr><td class="mono">${p.code || '—'}</td>
+    <td><span class="nm">${esc(pname(p))}</span> <span class="pill mute">${esc(ONS.CAT[p.cat])}</span>${p.special ? `<span class="sp" title="${esc(p.special)}">${esc(p.special)}</span>` : ''}${p.note ? `<span class="nt">※ ${esc(p.note)}</span>` : ''}</td>
+    <td class="small">${[p.kitchen && '管灌', p.selfpay && '自費'].filter(Boolean).join('<br>') || '—'}</td>
+    <td class="small">${esc(p.serving)}</td>
+    <td class="num mono">${fmt(p.kcal)}</td><td class="num mono">${fmt(p.pro)}${p.aaNotProtein ? '*' : ''}</td><td class="num mono">${fmt(p.kcalMl)}</td>
+    <td class="num mono">${fmt(p.na)}</td><td class="num mono">${fmt(p.k)}</td><td class="num mono">${fmt(p.p)}</td>
+    <td class="small"><span class="conf ${p.conf}">${confL[p.conf] || '—'}</span> ${(p.src || []).map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">${i + 1}</a>`).join(' ')}</td></tr>`).join('');
+}
+$('catQ').addEventListener('input', renderCatalog);
+
+/* ---------- basis table ---------- */
+function renderBasis() {
+  const n = R.n;
+  document.querySelector('#basisTable tbody').innerHTML = ONS.TAB.map(r => `<tr class="${n.ready && (n.kcalKg.row === r.k || n.proKg.row === r.k) ? 'hl' : ''}"><td>${esc(r.t)}</td><td class="mono">${r.kcal[0]}–${r.kcal[1]}（用 ${r.kcal[2]}）</td><td class="mono">${r.pro[0]}–${r.pro[1]}（用 ${r.pro[2]}）</td><td class="small">${esc(r.src)}</td></tr>`).join('');
+}
+
+/* ---------- tabs ---------- */
+const TABS = ['ws', 'cat', 'basis', 'cases', 'ref'];
+function showTab(t) {
+  TABS.forEach(x => { $(x).hidden = x !== t; $('tab-' + x).setAttribute('aria-selected', x === t); $('tab-' + x).tabIndex = x === t ? 0 : -1; });
+  try { localStorage.setItem(LS + '-tab', t); } catch (e) {}
+  window.scrollTo({ top: 0 });
+}
+document.querySelector('.tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (b) showTab(b.dataset.t); });
+document.querySelector('.tabs').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  const i = TABS.indexOf(document.querySelector('.tab[aria-selected="true"]').dataset.t);
+  const n = TABS[(i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length]; showTab(n); $('tab-' + n).focus();
+});
+
+/* ---------- example cases ---------- */
+const CASES = [
+  { t: '長者鼻胃管全管灌', d: '82 歲女性，中風後鼻胃管，150 cm、43 kg，無其他疾病，一般病房。', s: { sex: 'f', age: 82, ht: 150, wt: 43, setting: 'ward', route: 'ng', oral: 0, feeds: 6, c: {} } },
+  { t: '血液透析、食慾差', d: '68 歲男性，HD 每週三次，165 cm、乾體重 56 kg，目前三餐約吃一半，尿量約 300 mL。', s: { sex: 'm', age: 68, ht: 165, wt: 58, dry: 56, setting: 'opd', route: 'oral', oral: 50, c: { hd: true, fluidR: true }, fluidLim: 1000 } },
+  { t: 'CKD 4 未透析＋糖尿病', d: '72 歲男性，eGFR 22，門診追蹤，160 cm、58 kg，三個月體重減 4 kg，飲食約七成。', s: { sex: 'm', age: 72, ht: 160, wt: 58, uwt: 62, uwtSpan: 'le3', setting: 'opd', route: 'oral', oral: 70, c: { ckd: true, dm: true } } },
+  { t: '頭頸癌放療中體重下降', d: '58 歲男性，口咽癌放療第 4 週，170 cm，3 個月內從 63 kg 掉到 55 kg，吞嚥痛，進食約四成已一週。', s: { sex: 'm', age: 58, ht: 170, wt: 55, uwt: 63, uwtSpan: 'le3', lowIntake: '5', setting: 'opd', route: 'oral', oral: 40, form: 'liquid', c: { onc: true } } },
+  { t: '加護病房、肥胖', d: '60 歲男性，肺炎併呼吸衰竭插管，170 cm、100 kg（BMI 34.6），鼻胃管。', s: { sex: 'm', age: 60, ht: 170, wt: 100, setting: 'icu', route: 'ng', oral: 0, feeds: 6, c: {} } },
+  { t: '壓傷第 3 期、胃造口', d: '85 歲女性，臥床，薦骨壓傷第 3 期，148 cm、38 kg，PEG 灌食。', s: { sex: 'f', age: 85, ht: 148, wt: 38, setting: 'ward', route: 'peg', oral: 0, feeds: 6, c: { wound: true } } },
+  { t: '心衰竭限水', d: '78 歲男性，HFrEF，限水 1200 mL，160 cm、55 kg，鼻胃管。', s: { sex: 'm', age: 78, ht: 160, wt: 55, setting: 'ward', route: 'ng', oral: 0, feeds: 6, c: { fluidR: true }, fluidLim: 1200 } },
+  { t: '胰臟癌術後空腸灌食', d: '65 歲男性，Whipple 術後，空腸造口，168 cm、58 kg，脂肪便。', s: { sex: 'm', age: 65, ht: 168, wt: 58, setting: 'ward', route: 'jt', oral: 0, c: { surg: true, onc: true, malab: true } } },
+  { t: '再餵食高風險', d: '45 歲女性，酗酒，155 cm、36 kg（BMI 15），兩週幾乎沒吃，血磷 1.9，經口約吃兩成。', s: { sex: 'f', age: 45, ht: 155, wt: 36, uwt: 44, uwtSpan: 'le6', lowIntake: '15', lowLytes: true, drugs: true, setting: 'ward', route: 'oral', oral: 20, c: {} } }
+];
+function renderCases() {
+  $('caseList').innerHTML = CASES.map((c, i) => `<div class="card case"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><h3 style="font-size:15.5px">${esc(c.t)}</h3><span class="sample">示例</span></div><p class="small muted">${esc(c.d)}</p><div><button class="btn primary sm" type="button" data-case="${i}">載入此病例</button></div></div>`).join('');
+}
+function loadCase(i) {
+  const c = CASES[i];
+  S = Object.assign(blank(), JSON.parse(JSON.stringify(c.s)));
+  R = ONS.evaluate(S);
+  if (R.pl.list.length) S.rx = R.pl.list[0].items.map(x => ({ ...x }));
+  renderAll(); showTab('ws'); toast('已載入示例：' + c.t);
+}
+
+const REFS = [
+  ['Singer P, Blaser AR, Berger MM, et al. ESPEN practical and partially revised guideline: Clinical nutrition in the intensive care unit. Clin Nutr 2023;42:1671–1689.', 'https://doi.org/10.1016/j.clnu.2023.07.011'],
+  ['Gomes F, Schuetz P, Bounoure L, et al. ESPEN guidelines on nutritional support for polymorbid internal medicine patients. Clin Nutr 2018;37:336–353.', 'https://doi.org/10.1016/j.clnu.2017.06.025'],
+  ['Volkert D, Beck AM, Cederholm T, et al. ESPEN practical guideline: Clinical nutrition and hydration in geriatrics. Clin Nutr 2022;41:958–989.', 'https://doi.org/10.1016/j.clnu.2022.01.024'],
+  ['Bauer J, Biolo G, Cederholm T, et al. Evidence-based recommendations for optimal dietary protein intake in older people: PROT-AGE. J Am Med Dir Assoc 2013;14:542–559.', 'https://doi.org/10.1016/j.jamda.2013.05.021'],
+  ['Muscaritoli M, Arends J, Bachmann P, et al. ESPEN practical guideline: Clinical nutrition in cancer. Clin Nutr 2021;40:2898–2913.', 'https://doi.org/10.1016/j.clnu.2021.02.005'],
+  ['Weimann A, Braga M, Carli F, et al. ESPEN practical guideline: Clinical nutrition in surgery. Clin Nutr 2021;40:4745–4761.', 'https://doi.org/10.1016/j.clnu.2021.03.031'],
+  ['Plauth M, Bernal W, Dasarathy S, et al. ESPEN guideline on clinical nutrition in liver disease. Clin Nutr 2019;38:485–521.', 'https://doi.org/10.1016/j.clnu.2018.12.022'],
+  ['Fiaccadori E, Sabatino A, Barazzoni R, et al. ESPEN guideline on clinical nutrition in hospitalized patients with acute or chronic kidney disease. Clin Nutr 2021;40:1644–1668.', 'https://doi.org/10.1016/j.clnu.2021.01.028'],
+  ['Ikizler TA, Burrowes JD, Byham-Gray LD, et al. KDOQI Clinical Practice Guideline for Nutrition in CKD: 2020 Update. Am J Kidney Dis 2020;76(3 Suppl 1):S1–S107.', 'https://doi.org/10.1053/j.ajkd.2020.05.006'],
+  ['European Pressure Ulcer Advisory Panel, National Pressure Injury Advisory Panel, Pan Pacific Pressure Injury Alliance. Prevention and Treatment of Pressure Ulcers/Injuries: Clinical Practice Guideline, 3rd ed. 2019.', 'https://internationalguideline.com/'],
+  ['Rousseau AF, Losser MR, Ichai C, Berger MM. ESPEN endorsed recommendations: nutritional therapy in major burns. Clin Nutr 2013;32:497–502.', 'https://doi.org/10.1016/j.clnu.2013.02.012'],
+  ['National Institute for Health and Care Excellence. Nutrition support for adults: oral nutrition support, enteral tube feeding and parenteral nutrition (CG32), 2006, updated 2017.', 'https://www.nice.org.uk/guidance/cg32'],
+  ['da Silva JSV, Seres DS, Sabino K, et al. ASPEN consensus recommendations for refeeding syndrome. Nutr Clin Pract 2020;35:178–195.', 'https://doi.org/10.1002/ncp.10474'],
+  ['Cederholm T, Jensen GL, Correia MITD, et al. GLIM criteria for the diagnosis of malnutrition. Clin Nutr 2019;38:1–9.', 'https://doi.org/10.1016/j.clnu.2018.08.002'],
+  ['McClave SA, Taylor BE, Martindale RG, et al. Guidelines for the provision and assessment of nutrition support therapy in the adult critically ill patient (SCCM/ASPEN). JPEN 2016;40:159–211.', 'https://doi.org/10.1177/0148607115621863'],
+  ['中國醫藥大學北港附設醫院臨床營養科。院內營養品（管灌與自費）供貨中品項清單，115.08.07 更新。', ''],
+  ['各品項營養成分：廠商台灣官網產品頁與營養標示圖（查證日期 2026-10-04），連結見「院內品項」分頁。', '']
+];
+const CHANGELOG = [
+  '2026-10-04：全面改版。品項依院內清單 115.08.07（41 項）重建，營養成分逐項上網查證並附來源；新增自動組合處方（3 個方案）、多品項處方編輯、經口攝取扣除、計算體重（實際／理想／校正／乾體重）、依疾病與指引的熱量蛋白質目標、未透析 CKD 蛋白質上限、水分與灌食安排、鈉鉀磷合計、GLIM 與再餵食風險、醫令文字複製、示例病例。修正舊版：達成率很低仍顯示「符合」、空白欄位代入預設值、年齡／途徑等欄位未使用、基速得被當主營養品、新普派與元氣強數值錯誤。'
+];
+$('refList').innerHTML = REFS.map(r => `<li>${esc(r[0])} ${r[1] ? `<a href="${r[1]}" target="_blank" rel="noopener">連結</a>` : ''}</li>`).join('');
+$('changelog').innerHTML = CHANGELOG.map(x => `<li>${esc(x)}</li>`).join('');
+
+renderCatalog(); renderCases(); renderAll();
+(() => { let t = 'ws'; try { t = localStorage.getItem(LS + '-tab') || 'ws'; } catch (e) {} showTab(TABS.includes(t) ? t : 'ws'); })();
+</script>
 </body>
 </html>
