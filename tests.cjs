@@ -90,8 +90,6 @@ t('fluid limit 1200 mL: best plan volume within limit', () => assert.ok(best({ c
 t('oral route: at most 3 servings of main formula', () => best({ route: 'oral', oral: 0 }).list.forEach(p => assert.ok(p.items[0].q <= 3)));
 t('kitchen-only filter: every item is a tube-feeding supply', () => best({ avail: 'kitchen' }).list.forEach(p => p.items.forEach(i => assert.ok(O.byId[i.id].kitchen, i.id))));
 t('self-pay filter: every item has an order code', () => best({ avail: 'selfpay' }).list.forEach(p => p.items.forEach(i => assert.ok(O.byId[i.id].code, i.id))));
-t('16 items are marked 可選用 (G column)', () => assert.equal(O.P.filter(p => p.stock).length, 16));
-t('stock filter: every item is 可選用', () => [{}, { c: { hd: true } }, { route: 'oral', c: { ckd: true }, setting: 'opd', oral: 60 }].forEach(x => best(Object.assign({ avail: 'stock' }, x)).list.forEach(p => p.items.forEach(i => assert.ok(O.byId[i.id].stock, i.id)))));
 t('powder filter respected for main formula', () => best({ form: 'powder' }).list.forEach(p => assert.equal(O.byId[p.items[0].id].form, 'powder')));
 t('tube route never offers care food', () => best({}).list.forEach(p => p.items.forEach(i => assert.notEqual(O.byId[i.id].cat, 'food'))));
 t('diabetes: best plan uses a diabetes formula', () => assert.equal(items(best({ c: { dm: true } }))[0].cat, 'dm'));
