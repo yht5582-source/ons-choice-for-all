@@ -110,7 +110,8 @@ console.log('Schedule and order text');
 t('NG bolus 6 feeds: per-feed volume and water', () => { const s = base({}), n = O.needs(s), tt = O.totals([{ id: 'efi-20', q: 6 }]); const sc = O.schedule(s, n, tt); assert.equal(sc.mode, 'bolus'); assert.equal(sc.per, 250); assert.ok(sc.flush > 0); });
 t('J-tube → continuous rate over 20 h', () => { const s = base({ route: 'jt' }), n = O.needs(s), tt = O.totals([{ id: 'efi-peptide', q: 6 }]); assert.equal(O.schedule(s, n, tt).rate, 78); });
 t('order text lists code, quantity and totals', () => { const s = base({}), n = O.needs(s); const tx = O.orderText(s, n, [{ id: 'efi-20', q: 6 }], null, '2026-10-04'); assert.match(tx, /2814201/); assert.match(tx, /× 6 罐\/日/); assert.match(tx, /合計：熱量 1500 kcal/); });
-t('order text marks kitchen-only items', () => { const s = base({}), n = O.needs(s); assert.match(O.orderText(s, n, [{ id: 'efi-17', q: 6 }], null, ''), /管灌膳食/); });
+t('order text marks kitchen-only items', () => { const s = base({}), n = O.needs(s); assert.match(O.orderText(s, n, [{ id: 'efi-17', q: 6 }], null, ''), /膳食供應/); });
+t('kitchen-only items can be used orally without a warning', () => { const s = base({ route: 'oral' }), n = O.needs(s), f = O.fit(O.byId['efi-17'], O.ctxOf(s, n)); assert.ok(f.ok); assert.equal(f.notes.length, 0); });
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

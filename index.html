@@ -315,7 +315,7 @@ details.more>summary{cursor:pointer;font-size:13px;color:var(--ink-2);padding:4p
       <div class="chips" id="catChips"></div>
       <input type="search" id="catQ" placeholder="搜尋品名、廠牌或醫令碼" style="margin-bottom:10px">
       <div class="tablebox"><table class="cat"><thead><tr><th>醫令碼</th><th>品項</th><th>供應</th><th>一份</th><th class="num">熱量</th><th class="num">蛋白質</th><th class="num">kcal/mL</th><th class="num">Na</th><th class="num">K</th><th class="num">P</th><th>來源</th></tr></thead><tbody id="catRows"></tbody></table></div>
-      <p class="small muted" style="margin-top:8px">Na、K、P 單位為 mg／份。「管灌」＝院內管灌膳食可供應；「自費」＝有醫令碼可自費開立。</p>
+      <p class="small muted" style="margin-top:8px">Na、K、P 單位為 mg／份。「管灌」＝由膳食（管灌飲食）供應，經口也可使用；「自費」＝有醫令碼可自費開立。</p>
     </div>
   </section>
 
@@ -576,7 +576,6 @@ function fit(p, x) {
   if (x.avail === 'selfpay' && !p.selfpay) return { ok: false, why: '沒有自費醫令' };
   if (x.tube && p.tubeOk === false) return { ok: false, why: '不適合管灌' };
   if (x.form !== 'any' && BASE.includes(p.cat) && p.form !== x.form) return { ok: false, why: x.form === 'powder' ? '非粉狀' : '非液狀' };
-  if (x.oral && !p.selfpay) { pen += 4; notes.push('只列在管灌膳食，口服需確認供應方式'); }
   if (x.tube && !p.kitchen) pen += 2;
   const cat = p.cat;
   if (x.ckdLow) {
@@ -765,7 +764,7 @@ function orderText(s, n, rx, sch, date) {
   }
   L.push(`途徑：${ROUTE[s.route] || '—'}`);
   if (!t.list.length) { L.push('（尚未開立品項）'); return L.join('\n'); }
-  t.list.forEach(({ p, q }, i) => L.push(`${i + 1}. ${p.code ? p.code + ' ' : ''}${p.brand} ${p.name}（${p.serving}）× ${q} ${p.unit}/日${p.code ? '' : '〔管灌膳食〕'}`));
+  t.list.forEach(({ p, q }, i) => L.push(`${i + 1}. ${p.code ? p.code + ' ' : ''}${p.brand} ${p.name}（${p.serving}）× ${q} ${p.unit}/日${p.code ? '' : '〔膳食供應，無醫令〕'}`));
   L.push(`合計：熱量 ${t.kcal} kcal${n.ready ? `（${r0(t.kcal / (n.gapKcal || 1) * 100)}%）` : ''}，蛋白質 ${t.pro} g${n.ready ? `（${r0(t.pro / (n.gapPro || 1) * 100)}%）` : ''}${t.aa ? `，另胺基酸 ${t.aa} g` : ''}；容量 ${t.vol} mL`);
   L.push(`　　　鈉 ${t.na} mg、鉀 ${t.k} mg、磷 ${t.p} mg${t.unknown.size ? '（部分品項缺資料）' : ''}`);
   if (sch) {
@@ -1068,6 +1067,7 @@ const REFS = [
   ['各品項營養成分：廠商台灣官網產品頁與營養標示圖（查證日期 2026-10-04），連結見「院內品項」分頁。', '']
 ];
 const CHANGELOG = [
+  '2026-10-04：管灌膳食供應的品項確認也可經口使用，口服時不再降低排序。',
   '2026-10-04：全面改版。品項依院內清單 115.08.07（41 項）重建，營養成分逐項上網查證並附來源；新增自動組合處方（3 個方案）、多品項處方編輯、經口攝取扣除、計算體重（實際／理想／校正／乾體重）、依疾病與指引的熱量蛋白質目標、未透析 CKD 蛋白質上限、水分與灌食安排、鈉鉀磷合計、GLIM 與再餵食風險、醫令文字複製、示例病例。修正舊版：達成率很低仍顯示「符合」、空白欄位代入預設值、年齡／途徑等欄位未使用、基速得被當主營養品、新普派與元氣強數值錯誤。'
 ];
 $('refList').innerHTML = REFS.map(r => `<li>${esc(r[0])} ${r[1] ? `<a href="${r[1]}" target="_blank" rel="noopener">連結</a>` : ''}</li>`).join('');
