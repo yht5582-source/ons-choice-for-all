@@ -271,7 +271,7 @@ details.more>summary{cursor:pointer;font-size:13px;color:var(--ink-2);padding:4p
             <label class="field"><span class="flabel">理想體重公式</span><select data-s="ibwM"><option value="tw">男 (身高−80)×0.7／女 (身高−70)×0.6</option><option value="bmi22">BMI 22 × 身高²</option></select></label>
             <label class="field"><span class="flabel">熱量（覆寫）</span><span class="inl"><input type="number" inputmode="decimal" step="1" data-s="kcalKg"><span class="u">kcal/kg</span></span><span class="hint">空白＝依疾病自動</span></label>
             <label class="field"><span class="flabel">蛋白質（覆寫）</span><span class="inl"><input type="number" inputmode="decimal" step="0.05" data-s="proKg"><span class="u">g/kg</span></span></label>
-            <label class="field"><span class="flabel">品項來源</span><select data-s="avail"><option value="any">不限</option><option value="kitchen">只用管灌膳食供應品項</option><option value="selfpay">只用有醫令的自費品項</option></select></label>
+            <label class="field"><span class="flabel">品項來源</span><select data-s="avail"><option value="any">不限</option><option value="kitchen">只用管灌膳食供應品項</option><option value="selfpay">只用有醫令的自費品項</option><option value="stock">只用可選用品項（清單 G 欄）</option></select><span class="hint">不限時，可選用品項會優先推薦</span></label>
             <label class="field"><span class="flabel">劑型</span><select data-s="form"><option value="any">不限</option><option value="powder">粉狀沖泡</option><option value="liquid">液狀即飲</option></select><span class="hint">食慾差、要少量高密度時選液狀</span></label>
           </div>
         </div>
@@ -315,7 +315,7 @@ details.more>summary{cursor:pointer;font-size:13px;color:var(--ink-2);padding:4p
       <div class="chips" id="catChips"></div>
       <input type="search" id="catQ" placeholder="搜尋品名、廠牌或醫令碼" style="margin-bottom:10px">
       <div class="tablebox"><table class="cat"><thead><tr><th>醫令碼</th><th>品項</th><th>供應</th><th>一份</th><th class="num">熱量</th><th class="num">蛋白質</th><th class="num">kcal/mL</th><th class="num">Na</th><th class="num">K</th><th class="num">P</th><th>來源</th></tr></thead><tbody id="catRows"></tbody></table></div>
-      <p class="small muted" style="margin-top:8px">Na、K、P 單位為 mg／份。「管灌」＝由膳食（管灌飲食）供應，經口也可使用；「自費」＝有醫令碼可自費開立。</p>
+      <p class="small muted" style="margin-top:8px">Na、K、P 單位為 mg／份。「可選用」＝院內清單 G 欄勾選的品項，推薦時優先；「管灌」＝由膳食（管灌飲食）供應，經口也可使用；「自費」＝有醫令碼可自費開立。</p>
     </div>
   </section>
 
@@ -574,9 +574,11 @@ function fit(p, x) {
   let pen = 0;
   if (x.avail === 'kitchen' && !p.kitchen) return { ok: false, why: '非管灌膳食供應品項' };
   if (x.avail === 'selfpay' && !p.selfpay) return { ok: false, why: '沒有自費醫令' };
+  if (x.avail === 'stock' && !p.stock) return { ok: false, why: '不在可選用品項' };
   if (x.tube && p.tubeOk === false) return { ok: false, why: '不適合管灌' };
   if (x.form !== 'any' && BASE.includes(p.cat) && p.form !== x.form) return { ok: false, why: x.form === 'powder' ? '非粉狀' : '非液狀' };
   if (x.tube && !p.kitchen) pen += 2;
+  if (!p.stock) pen += 5; // 院內清單 G 欄「可選用」品項優先
   const cat = p.cat;
   if (x.ckdLow) {
     if (cat === 'hd' || cat === 'promod') { pen += 30; notes.push('高蛋白，不適合未透析低蛋白飲食'); }
@@ -608,7 +610,7 @@ function fit(p, x) {
     pep: x.jt || x.c.malab, onc: x.c.onc, imm: x.c.surg || x.c.onc || x.c.wound || x.c.burn,
     hd: x.dial, ckd: !!x.c.ckd && !x.dial, dm: x.c.dm, conc: x.fluidLimited || x.oral
   };
-  const off = { pep: 12, onc: 12, imm: 12, hd: 15, ckd: 20, dm: 8, conc: 6 };
+  const off = { pep: 12, onc: 12, imm: 12, hd: 15, ckd: 20, dm: 10, conc: 6 };
   if (off[cat] && !has[cat]) { pen += off[cat]; if (off[cat] >= 12) notes.push(`${CAT[cat]}專用配方，此病人無相應適應症`); }
   if (p.id === 'efi-yuanqi' && !x.dial && !x.hiK) pen += 3;
   if (p.id === 'efi-energy' && !x.ckdLow) pen += 3;
@@ -857,7 +859,7 @@ function renderFlags() {
   $('flags').innerHTML = F.map(alertHTML).join('');
 }
 
-function itemLine(it) { const p = ONS.byId[it.id]; return `<li>${p.code ? `<span class="mono small">${p.code}</span> ` : ''}${esc(pname(p))} <b class="mono">× ${it.q}</b> ${esc(p.unit)}<span class="small muted">（${esc(p.serving)}）</span></li>`; }
+function itemLine(it) { const p = ONS.byId[it.id]; return `<li>${p.code ? `<span class="mono small">${p.code}</span> ` : ''}${esc(pname(p))}${p.stock ? ' <span class="pill go">可選用</span>' : ''} <b class="mono">× ${it.q}</b> ${esc(p.unit)}<span class="small muted">（${esc(p.serving)}）</span></li>`; }
 
 function renderPlans() {
   const n = R.n, pl = R.pl;
@@ -989,14 +991,14 @@ let tt; function toast(m) { const el = $('toast'); el.textContent = m; el.classL
 let catFilter = 'all';
 function renderCatalog() {
   const cats = Object.keys(ONS.CAT).filter(k => ONS.P.some(p => p.cat === k));
-  $('catChips').innerHTML = [['all', '全部'], ...cats.map(k => [k, ONS.CAT[k]])].map(([k, l]) => `<button class="chip" type="button" data-chip="${k}" aria-pressed="${catFilter === k}">${esc(l)}</button>`).join('');
+  $('catChips').innerHTML = [['all', '全部'], ['stock', '可選用'], ...cats.map(k => [k, ONS.CAT[k]])].map(([k, l]) => `<button class="chip" type="button" data-chip="${k}" aria-pressed="${catFilter === k}">${esc(l)}</button>`).join('');
   const q = ($('catQ').value || '').trim().toLowerCase();
-  const rows = ONS.P.filter(p => (catFilter === 'all' || p.cat === catFilter) && (!q || `${p.brand}${p.name}${p.code || ''}`.toLowerCase().includes(q)));
+  const rows = ONS.P.filter(p => (catFilter === 'all' || (catFilter === 'stock' ? p.stock : p.cat === catFilter)) && (!q || `${p.brand}${p.name}${p.code || ''}`.toLowerCase().includes(q)));
   $('catCount').textContent = `${ONS.P.length} 項`;
   const confL = { high: '高', medium: '中', low: '低' };
   $('catRows').innerHTML = rows.map(p => `<tr><td class="mono">${p.code || '—'}</td>
     <td><span class="nm">${esc(pname(p))}</span> <span class="pill mute">${esc(ONS.CAT[p.cat])}</span>${p.special ? `<span class="sp" title="${esc(p.special)}">${esc(p.special)}</span>` : ''}${p.note ? `<span class="nt">※ ${esc(p.note)}</span>` : ''}</td>
-    <td class="small">${[p.kitchen && '管灌', p.selfpay && '自費'].filter(Boolean).join('<br>') || '—'}</td>
+    <td class="small">${[p.stock && '<b>可選用</b>', p.kitchen && '管灌', p.selfpay && '自費'].filter(Boolean).join('<br>') || '—'}</td>
     <td class="small">${esc(p.serving)}</td>
     <td class="num mono">${fmt(p.kcal)}</td><td class="num mono">${fmt(p.pro)}${p.aaNotProtein ? '*' : ''}</td><td class="num mono">${fmt(p.kcalMl)}</td>
     <td class="num mono">${fmt(p.na)}</td><td class="num mono">${fmt(p.k)}</td><td class="num mono">${fmt(p.p)}</td>
@@ -1067,6 +1069,7 @@ const REFS = [
   ['各品項營養成分：廠商台灣官網產品頁與營養標示圖（查證日期 2026-10-04），連結見「院內品項」分頁。', '']
 ];
 const CHANGELOG = [
+  '2026-10-04：院內清單 G 欄（可選用）16 項標示於品項表與方案中，推薦時優先；「品項來源」可設為只用可選用品項。',
   '2026-10-04：管灌膳食供應的品項確認也可經口使用，口服時不再降低排序。',
   '2026-10-04：全面改版。品項依院內清單 115.08.07（41 項）重建，營養成分逐項上網查證並附來源；新增自動組合處方（3 個方案）、多品項處方編輯、經口攝取扣除、計算體重（實際／理想／校正／乾體重）、依疾病與指引的熱量蛋白質目標、未透析 CKD 蛋白質上限、水分與灌食安排、鈉鉀磷合計、GLIM 與再餵食風險、醫令文字複製、示例病例。修正舊版：達成率很低仍顯示「符合」、空白欄位代入預設值、年齡／途徑等欄位未使用、基速得被當主營養品、新普派與元氣強數值錯誤。'
 ];
