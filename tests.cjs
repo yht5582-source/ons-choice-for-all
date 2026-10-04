@@ -23,6 +23,7 @@ const items = pl => pl.list[0].items.map(i => O.byId[i.id]);
 
 console.log('Product data');
 t('every product has id, name, category, serving and source confidence', () => O.P.forEach(p => { assert.ok(p.id && p.name && O.CAT[p.cat] && p.serving, p.id); assert.ok(['high', 'medium', 'low'].includes(p.conf), p.id); }));
+t('exactly the 41 items on the hospital list, each with its list name', () => { assert.equal(O.P.length, 41); assert.equal(O.HOSP.length, 41); O.P.forEach(p => assert.ok(p.hosp, p.id)); assert.equal(new Set(O.P.map(p => p.hosp)).size, 41); });
 t('product ids are unique', () => assert.equal(new Set(O.P.map(p => p.id)).size, O.P.length));
 t('main formulas have kcal and protein', () => O.P.filter(p => O.BASE.includes(p.cat)).forEach(p => { assert.ok(p.kcal > 0, p.id); assert.ok(p.pro !== null && p.pro !== undefined, p.id); }));
 t('hospital codes are 7 digits', () => O.P.filter(p => p.code).forEach(p => assert.match(p.code, /^\d{7}$/, p.id)));
@@ -95,6 +96,8 @@ t('tube route never offers care food', () => best({}).list.forEach(p => p.items.
 t('diabetes: best plan uses a diabetes formula', () => assert.equal(items(best({ c: { dm: true } }))[0].cat, 'dm'));
 t('intake already ≥ need → no plans', () => assert.equal(best({ route: 'oral', oral: 100 }).list.length, 0));
 
+const SCEN = [{}, { route: 'oral', oral: 50 }, { route: 'jt' }, { setting: 'icu', ht: 170, wt: 100 }, { c: { dm: true } }, { c: { ckd: true }, setting: 'opd', route: 'oral', oral: 60 }, { c: { hd: true } }, { c: { hd: true, fluidR: true }, fluidLim: 1000, route: 'oral', oral: 50 }, { c: { onc: true }, route: 'oral', oral: 40 }, { c: { wound: true, surg: true, burn: true, press: true, dysph: true }, route: 'oral', oral: 30 }, { c: { fluidR: true }, fluidLim: 1200 }, { c: { malab: true } }, { avail: 'kitchen' }, { avail: 'selfpay' }, { form: 'liquid', route: 'oral', oral: 0 }];
+t('every recommended item, in every scenario, is on the hospital list', () => SCEN.forEach(x => { const s = base(x), n = O.needs(s); O.plans(s, n).list.forEach(p => p.items.forEach(i => assert.ok(O.byId[i.id] && O.byId[i.id].hosp, JSON.stringify(x) + ' ' + i.id))); O.extras(s, n).forEach(e => e.items.forEach(p => assert.ok(p.hosp, p.id))); }));
 console.log('Prescription review');
 const rv = (x, rx) => { const s = base(x); return O.review(s, O.needs(s), rx); };
 t('very low energy → red alert (old page said "符合")', () => assert.ok(rv({}, [{ id: 'efi-classic55', q: 2 }]).A.some(a => a.c === 'stop' && /熱量/.test(a.t))));
@@ -110,6 +113,7 @@ console.log('Schedule and order text');
 t('NG bolus 6 feeds: per-feed volume and water', () => { const s = base({}), n = O.needs(s), tt = O.totals([{ id: 'efi-20', q: 6 }]); const sc = O.schedule(s, n, tt); assert.equal(sc.mode, 'bolus'); assert.equal(sc.per, 250); assert.ok(sc.flush > 0); });
 t('J-tube → continuous rate over 20 h', () => { const s = base({ route: 'jt' }), n = O.needs(s), tt = O.totals([{ id: 'efi-peptide', q: 6 }]); assert.equal(O.schedule(s, n, tt).rate, 78); });
 t('order text lists code, quantity and totals', () => { const s = base({}), n = O.needs(s); const tx = O.orderText(s, n, [{ id: 'efi-20', q: 6 }], null, '2026-10-04'); assert.match(tx, /2814201/); assert.match(tx, /× 6 罐\/日/); assert.match(tx, /合計：熱量 1500 kcal/); });
+t('order text uses the hospital-list name', () => { const s = base({}), n = O.needs(s); assert.match(O.orderText(s, n, [{ id: 'abt-twocal', q: 2 }], null, ''), /2814039 亞培 安素雙卡\(香草口味\)/); });
 t('order text marks kitchen-only items', () => { const s = base({}), n = O.needs(s); assert.match(O.orderText(s, n, [{ id: 'efi-17', q: 6 }], null, ''), /膳食供應/); });
 t('kitchen-only items can be used orally without a warning', () => { const s = base({ route: 'oral' }), n = O.needs(s), f = O.fit(O.byId['efi-17'], O.ctxOf(s, n)); assert.ok(f.ok); assert.equal(f.notes.length, 0); });
 
